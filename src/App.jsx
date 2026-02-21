@@ -3,32 +3,44 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 const CSS = () => (
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #080a0f; --s1: #0e1118; --s2: #141720; --s3: #1a1e2a;
-      --b1: #1e2335; --b2: #2a3050;
-      --acc: #ff5c2e; --acc2: #ff8c5a;
-      --blue: #4c8eff; --green: #2eff9a; --yellow: #ffd12e;
-      --t1: #f0f4ff; --t2: #8892aa; --t3: #3d4563;
-      --font: 'Outfit', sans-serif; --mono: 'JetBrains Mono', monospace;
+      --bg:  #0a0a0a;
+      --s1:  #111111;
+      --s2:  #181818;
+      --s3:  #202020;
+      --b1:  #2a2a2a;
+      --b2:  #333333;
+      --acc: #c8a96e;
+      --acc2:#e8c98e;
+      --blue:#6b9fff;
+      --green:#4ecb71;
+      --red: #e05c5c;
+      --t1:  #f5f5f0;
+      --t2:  #888880;
+      --t3:  #444440;
+      --font:'DM Sans', sans-serif;
+      --mono:'DM Mono', monospace;
     }
-    html, body, #root { height: 100%; background: var(--bg); color: var(--t1); font-family: var(--font); }
-    * { scrollbar-width: thin; scrollbar-color: var(--b2) transparent; }
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 2px; }
+    html, body, #root { height:100%; background:var(--bg); color:var(--t1); font-family:var(--font); }
+    * { scrollbar-width:thin; scrollbar-color:var(--b2) transparent; }
+    ::-webkit-scrollbar { width:3px; }
+    ::-webkit-scrollbar-thumb { background:var(--b2); border-radius:2px; }
     input, select, textarea {
-      background: var(--s2); color: var(--t1); border: 1.5px solid var(--b1);
-      border-radius: 10px; padding: 12px 14px; font-family: var(--font);
-      font-size: 16px; width: 100%; outline: none; transition: border-color .18s;
-      -webkit-appearance: none; appearance: none;
+      background:var(--s2); color:var(--t1); border:1px solid var(--b1);
+      border-radius:10px; padding:13px 16px; font-family:var(--font);
+      font-size:16px; width:100%; outline:none; transition:border-color .2s, box-shadow .2s;
+      -webkit-appearance:none; appearance:none; letter-spacing:.01em;
     }
-    input:focus, select:focus, textarea:focus { border-color: var(--acc); }
-    select option { background: var(--s2); }
-    button { cursor: pointer; font-family: var(--font); -webkit-tap-highlight-color: transparent; }
-    @keyframes up { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-    .au { animation: up .2s ease forwards; }
-    @keyframes sl { from { opacity:0; transform:translateX(-100%); } to { opacity:1; transform:translateX(0); } }
+    input:focus, select:focus, textarea:focus {
+      border-color:var(--acc);
+      box-shadow:0 0 0 3px rgba(200,169,110,.1);
+    }
+    select option { background:var(--s2); }
+    button { cursor:pointer; font-family:var(--font); -webkit-tap-highlight-color:transparent; }
+    @keyframes up { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .au { animation:up .25s ease forwards; }
   `}</style>
 );
 
@@ -60,46 +72,45 @@ const DEF_A = [
 
 // ── UI primitives ─────────────────────────────────────────────────────────────
 const Pill = ({c="var(--acc)",children}) => (
-  <span style={{background:c+"18",color:c,border:`1px solid ${c}30`,borderRadius:5,padding:"2px 8px",fontSize:11,fontWeight:600,letterSpacing:".05em",whiteSpace:"nowrap"}}>{children}</span>
+  <span style={{background:c+"14",color:c,border:`1px solid ${c}25`,borderRadius:4,padding:"2px 9px",fontSize:10,fontWeight:500,letterSpacing:".08em",whiteSpace:"nowrap",textTransform:"uppercase"}}>{children}</span>
 );
 
 const StatBox = ({label,val,unit,c="var(--acc)"}) => (
-  <div style={{background:"var(--s2)",border:"1.5px solid var(--b1)",borderRadius:12,padding:"14px 16px",position:"relative",overflow:"hidden",flex:1,minWidth:0}}>
-    <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,${c},transparent)`}}/>
-    <div style={{fontSize:10,fontWeight:600,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:6}}>{label}</div>
-    <div style={{fontSize:22,fontWeight:800,color:c,lineHeight:1}}>{val}<span style={{fontSize:12,fontWeight:400,color:"var(--t2)",marginLeft:3}}>{unit}</span></div>
+  <div style={{background:"var(--s1)",border:"1px solid var(--b1)",borderRadius:14,padding:"16px 18px",flex:1,minWidth:0}}>
+    <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:10}}>{label}</div>
+    <div style={{fontSize:24,fontWeight:300,color:"var(--t1)",lineHeight:1,letterSpacing:"-.02em"}}>{val}<span style={{fontSize:13,fontWeight:400,color:"var(--t3)",marginLeft:6}}>{unit}</span></div>
+    <div style={{marginTop:8,height:1,background:`linear-gradient(90deg,${c}60,transparent)`}}/>
   </div>
 );
 
 const Btn = ({onClick,children,ghost,danger,full,sm}) => (
   <button onClick={onClick} style={{
-    background: danger?"rgba(239,68,68,.15)":ghost?"transparent":`linear-gradient(135deg,var(--acc),var(--acc2))`,
-    border: `1.5px solid ${danger?"rgba(239,68,68,.5)":ghost?"var(--b2)":"transparent"}`,
-    color: danger?"#ef4444":ghost?"var(--t2)":"#fff",
+    background: danger?"rgba(224,92,92,.1)":ghost?"transparent":"var(--acc)",
+    border: `1px solid ${danger?"rgba(224,92,92,.4)":ghost?"var(--b2)":"var(--acc)"}`,
+    color: danger?"var(--red)":ghost?"var(--t2)":"#0a0a0a",
     borderRadius:10, padding:sm?"10px 16px":"13px 22px",
-    fontSize:sm?13:15, fontWeight:700, letterSpacing:".02em",
-    width:full?"100%":"auto", transition:"all .15s",
-    boxShadow:ghost||danger?"none":"0 2px 16px rgba(255,92,46,.3)",
+    fontSize:sm?13:14, fontWeight:600, letterSpacing:".02em",
+    width:full?"100%":"auto", transition:"opacity .15s",
     touchAction:"manipulation",
   }}>{children}</button>
 );
 
 const IBtn = ({onClick,title,children,danger}) => (
   <button onClick={onClick} title={title} style={{
-    background:"var(--s3)",border:"1.5px solid var(--b1)",borderRadius:8,
-    padding:"8px 12px",color:danger?"#ef4444":"var(--t2)",fontSize:14,
-    touchAction:"manipulation",minWidth:40,minHeight:40,
+    background:"none",border:"1px solid var(--b1)",borderRadius:8,
+    padding:"8px 12px",color:danger?"var(--red)":"var(--t3)",fontSize:14,
+    touchAction:"manipulation",minWidth:40,minHeight:40,transition:"border-color .15s",
   }}>{children}</button>
 );
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
 const Modal = ({title,onClose,children}) => (
-  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:0}} onClick={onClose}>
-    <div style={{background:"var(--s1)",border:"1.5px solid var(--b2)",borderRadius:"18px 18px 0 0",width:"100%",maxWidth:600,maxHeight:"92vh",overflowY:"auto",padding:24,paddingBottom:40}} onClick={e=>e.stopPropagation()}>
-      <div style={{width:40,height:4,background:"var(--b2)",borderRadius:2,margin:"0 auto 20px"}}/>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-        <h2 style={{fontSize:20,fontWeight:800}}>{title}</h2>
-        <button onClick={onClose} style={{background:"var(--s3)",border:"1.5px solid var(--b1)",borderRadius:8,color:"var(--t2)",fontSize:18,width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>✕</button>
+  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(8px)"}} onClick={onClose}>
+    <div style={{background:"var(--s1)",borderTop:"1px solid var(--b2)",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:600,maxHeight:"92vh",overflowY:"auto",padding:"0 20px 40px"}} onClick={e=>e.stopPropagation()}>
+      <div style={{width:36,height:3,background:"var(--b2)",borderRadius:2,margin:"14px auto 20px"}}/>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"1px solid var(--b1)"}}>
+        <h2 style={{fontSize:18,fontWeight:500,letterSpacing:"-.01em"}}>{title}</h2>
+        <button onClick={onClose} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,color:"var(--t3)",fontSize:16,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>✕</button>
       </div>
       {children}
     </div>
@@ -206,27 +217,30 @@ const FuelMod = ({vid,fueling,setFueling}) => {
       {/* Records as cards on mobile */}
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {[...filtered].reverse().map(f=>(
-          <div key={f.id} style={{background:"var(--s2)",border:"1.5px solid var(--b1)",borderRadius:12,padding:"14px 16px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+          <div key={f.id} style={{background:"var(--s1)",border:"1px solid var(--b1)",borderRadius:14,padding:"16px 18px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
               <div>
-                <div style={{fontWeight:700,fontSize:15}}>{fmtD(f.date)}</div>
-                <div style={{color:"var(--t2)",fontSize:13,marginTop:2}}>{f.location}</div>
+                <div style={{fontSize:10,color:"var(--t3)",letterSpacing:".1em",textTransform:"uppercase",marginBottom:4}}>{fmtD(f.date)}</div>
+                <div style={{fontWeight:500,fontSize:15,letterSpacing:"-.01em"}}>{f.location}</div>
+                <div style={{fontSize:12,color:"var(--t3)",marginTop:3}}>{f.fuelType}</div>
               </div>
               <div style={{textAlign:"right"}}>
-                <div style={{fontSize:18,fontWeight:800,color:"var(--acc)",fontFamily:"var(--mono)"}}>{fmt(f.total)} Kč</div>
-                <div style={{fontSize:11,color:"var(--t3)",marginTop:1}}>{fmt(f.pricePerLiter,2)} Kč/l</div>
+                <div style={{fontSize:20,fontWeight:300,color:"var(--t1)",fontFamily:"var(--mono)",letterSpacing:"-.02em"}}>{fmt(f.total)}<span style={{fontSize:12,color:"var(--t3)",marginLeft:4}}>Kč</span></div>
+                <div style={{fontSize:11,color:"var(--t3)",marginTop:2,fontFamily:"var(--mono)"}}>{fmt(f.pricePerLiter,2)} Kč/l</div>
               </div>
             </div>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
-              <Pill c="var(--blue)">{f.fuelType}</Pill>
-              <Pill c="var(--t2)">{fmt(f.liters,1)} l</Pill>
-              <Pill c="var(--t2)">{fmt(f.km)} km</Pill>
-              {f.driven&&<Pill c="var(--green)">+{fmt(f.driven)} km</Pill>}
-              {f.cons&&<Pill c="var(--acc)">{fmt(f.cons,1)} l/100</Pill>}
-            </div>
-            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-              <IBtn onClick={()=>openEdit(f)}>✏️</IBtn>
-              <IBtn onClick={()=>del(f.id)} danger>🗑</IBtn>
+            <div style={{height:"1px",background:"var(--b1)",marginBottom:12}}/>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                <Pill c="var(--t2)">{fmt(f.liters,1)} l</Pill>
+                <Pill c="var(--t2)">{fmt(f.km)} km</Pill>
+                {f.driven&&<Pill c="var(--green)">↑ {fmt(f.driven)} km</Pill>}
+                {f.cons&&<Pill c="var(--acc)">{fmt(f.cons,1)} l/100</Pill>}
+              </div>
+              <div style={{display:"flex",gap:6}}>
+                <IBtn onClick={()=>openEdit(f)}>✏️</IBtn>
+                <IBtn onClick={()=>del(f.id)} danger>🗑</IBtn>
+              </div>
             </div>
           </div>
         ))}
@@ -428,27 +442,28 @@ const AddMod = ({vid,addons,setAddons}) => {
 // ── VEHICLE DRAWER ─────────────────────────────────────────────────────────────
 const VehicleDrawer = ({vehicles,activeVid,setActiveVid,onAdd,onClose}) => (
   <div style={{position:"fixed",inset:0,zIndex:500,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
-    <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.8)"}} onClick={onClose}/>
-    <div style={{position:"relative",background:"var(--s1)",borderRadius:"18px 18px 0 0",padding:"20px 16px 40px",maxHeight:"80vh",overflowY:"auto"}}>
-      <div style={{width:40,height:4,background:"var(--b2)",borderRadius:2,margin:"0 auto 20px"}}/>
-      <div style={{fontSize:12,fontWeight:600,letterSpacing:".1em",color:"var(--t3)",textTransform:"uppercase",marginBottom:14}}>Vozidla</div>
+    <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.7)",backdropFilter:"blur(8px)"}} onClick={onClose}/>
+    <div style={{position:"relative",background:"var(--s1)",borderTop:"1px solid var(--b2)",borderRadius:"20px 20px 0 0",padding:"0 18px 40px",maxHeight:"80vh",overflowY:"auto"}}>
+      <div style={{width:36,height:3,background:"var(--b2)",borderRadius:2,margin:"14px auto 20px"}}/>
+      <div style={{fontSize:10,fontWeight:500,letterSpacing:".14em",color:"var(--t3)",textTransform:"uppercase",marginBottom:16}}>Vaše vozidla</div>
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {vehicles.map(v=>(
           <div key={v.id} onClick={()=>{setActiveVid(v.id);onClose();}} style={{
-            background:activeVid===v.id?`linear-gradient(135deg,${v.color}18,${v.color}08)`:"var(--s2)",
-            border:`1.5px solid ${activeVid===v.id?v.color:"var(--b1)"}`,
-            borderRadius:12,padding:"14px 16px",cursor:"pointer",
-            display:"flex",alignItems:"center",gap:14,
+            background:activeVid===v.id?"var(--s2)":"none",
+            border:`1px solid ${activeVid===v.id?v.color+"60":"var(--b1)"}`,
+            borderRadius:14,padding:"16px",cursor:"pointer",
+            display:"flex",alignItems:"center",gap:14,position:"relative",overflow:"hidden",
           }}>
-            <div style={{width:46,height:46,borderRadius:10,background:v.color+"20",border:`1.5px solid ${v.color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>🚗</div>
+            {activeVid===v.id&&<div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:v.color,borderRadius:"3px 0 0 3px"}}/>}
+            <div style={{width:44,height:44,borderRadius:10,background:v.color+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🚗</div>
             <div>
-              <div style={{fontWeight:700,fontSize:16}}>{v.brand} {v.model}</div>
-              <div style={{fontSize:12,color:"var(--t2)",marginTop:2}}>{v.year} · {v.spz}</div>
-              <div style={{marginTop:4}}><Pill c={v.color}>{v.fuel}</Pill></div>
+              <div style={{fontSize:10,color:"var(--t3)",letterSpacing:".1em",textTransform:"uppercase",marginBottom:3}}>{v.year} · {v.spz}</div>
+              <div style={{fontWeight:500,fontSize:16,letterSpacing:"-.01em"}}>{v.brand} {v.model}</div>
+              <div style={{marginTop:5}}><Pill c={v.color}>{v.fuel}</Pill></div>
             </div>
           </div>
         ))}
-        <button onClick={()=>{onAdd();onClose();}} style={{background:"none",border:"1.5px dashed var(--b2)",borderRadius:12,padding:14,color:"var(--t2)",fontSize:14,fontWeight:500,touchAction:"manipulation"}}>+ Přidat vozidlo</button>
+        <button onClick={()=>{onAdd();onClose();}} style={{background:"none",border:"1px dashed var(--b2)",borderRadius:12,padding:16,color:"var(--t3)",fontSize:13,fontWeight:400,touchAction:"manipulation",letterSpacing:".02em"}}>+ Přidat vozidlo</button>
       </div>
     </div>
   </div>
@@ -517,14 +532,14 @@ export default function App() {
       <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",maxWidth:680,margin:"0 auto"}}>
 
         {/* TOP BAR */}
-        <div style={{position:"sticky",top:0,zIndex:100,background:"var(--s1)",borderBottom:"1.5px solid var(--b1)",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div style={{fontSize:20,fontWeight:900,letterSpacing:".02em"}}>AUTO<span style={{color:"var(--acc)"}}>DENÍK</span></div>
+        <div style={{position:"sticky",top:0,zIndex:100,background:"rgba(10,10,10,.92)",borderBottom:"1px solid var(--b1)",padding:"14px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",backdropFilter:"blur(20px)"}}>
+          <div style={{fontSize:17,fontWeight:600,letterSpacing:".15em",color:"var(--t1)",textTransform:"uppercase"}}>AutoDeník</div>
           <button onClick={()=>setShowVDrawer(true)} style={{
-            background:"var(--s2)",border:"1.5px solid var(--b1)",borderRadius:10,
-            padding:"8px 14px",color:"var(--t1)",fontSize:14,fontWeight:600,
-            display:"flex",alignItems:"center",gap:8,touchAction:"manipulation",
+            background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,
+            padding:"8px 14px",color:"var(--t1)",fontSize:13,fontWeight:500,
+            display:"flex",alignItems:"center",gap:8,touchAction:"manipulation",letterSpacing:".01em",
           }}>
-            {av?<><span style={{color:av.color}}>●</span> {av.brand} {av.model}</>:"Vybrat vozidlo"} <span style={{color:"var(--t3)"}}>▼</span>
+            {av?<><span style={{width:6,height:6,borderRadius:"50%",background:av.color,display:"inline-block"}}></span> {av.brand} {av.model}</>:"Vybrat vozidlo"} <span style={{color:"var(--t3)",fontSize:10}}>▼</span>
           </button>
         </div>
 
@@ -533,18 +548,14 @@ export default function App() {
           {av?(
             <>
               {/* Vehicle info card */}
-              <div style={{background:"var(--s2)",border:"1.5px solid var(--b1)",borderRadius:14,padding:"16px",marginBottom:16,position:"relative",overflow:"hidden"}}>
-                <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${av.color},transparent)`}}/>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
-                  <div style={{display:"flex",gap:12,alignItems:"center"}}>
-                    <div style={{width:48,height:48,borderRadius:12,background:av.color+"20",border:`1.5px solid ${av.color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🚗</div>
-                    <div>
-                      <div style={{fontSize:20,fontWeight:900}}>{av.brand} {av.model}</div>
-                      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4}}>
-                        <Pill c={av.color}>{av.fuel}</Pill>
-                        <Pill c="var(--t3)">{av.year}</Pill>
-                        <Pill c="var(--t3)">{av.spz}</Pill>
-                      </div>
+              <div style={{background:"var(--s1)",border:"1px solid var(--b1)",borderRadius:16,padding:"20px",marginBottom:18,overflow:"hidden",position:"relative"}}>
+                <div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at top left, ${av.color}08, transparent 60%)`}}/>
+                <div style={{position:"relative",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:6}}>{av.year} · {av.spz}</div>
+                    <div style={{fontSize:24,fontWeight:300,letterSpacing:"-.02em",color:"var(--t1)"}}>{av.brand} <strong style={{fontWeight:600}}>{av.model}</strong></div>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:10}}>
+                      <Pill c={av.color}>{av.fuel}</Pill>
                     </div>
                   </div>
                   <div style={{display:"flex",gap:8}}>
@@ -552,18 +563,19 @@ export default function App() {
                     <IBtn onClick={()=>delV(av.id)} danger>🗑</IBtn>
                   </div>
                 </div>
-                {av.vin&&<div style={{fontSize:11,color:"var(--t3)",marginTop:10,fontFamily:"var(--mono)"}}>VIN: {av.vin}</div>}
+                {av.vin&&<div style={{fontSize:10,color:"var(--t3)",marginTop:14,fontFamily:"var(--mono)",letterSpacing:".05em"}}>VIN · {av.vin}</div>}
               </div>
 
               {/* Tabs */}
-              <div style={{display:"flex",gap:4,marginBottom:16,background:"var(--s2)",border:"1.5px solid var(--b1)",borderRadius:12,padding:4}}>
+              <div style={{display:"flex",gap:0,marginBottom:20,borderBottom:"1px solid var(--b1)"}}>
                 {TABS.map(t=>(
                   <button key={t.id} onClick={()=>setTab(t.id)} style={{
-                    flex:1,background:tab===t.id?`linear-gradient(135deg,var(--acc),var(--acc2))`:"none",
-                    border:"none",borderRadius:9,padding:"10px 4px",
-                    color:tab===t.id?"#fff":"var(--t2)",fontWeight:700,fontSize:13,
-                    letterSpacing:".01em",transition:"all .2s",touchAction:"manipulation",
-                    boxShadow:tab===t.id?"0 2px 12px rgba(255,92,46,.3)":"none",
+                    flex:1,background:"none",border:"none",
+                    borderBottom:tab===t.id?`2px solid var(--acc)`:"2px solid transparent",
+                    padding:"12px 4px",marginBottom:"-1px",
+                    color:tab===t.id?"var(--acc)":"var(--t3)",
+                    fontWeight:tab===t.id?600:400,fontSize:13,
+                    letterSpacing:".02em",transition:"all .2s",touchAction:"manipulation",
                   }}>{t.icon} {t.label}</button>
                 ))}
               </div>
