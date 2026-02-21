@@ -87,7 +87,7 @@ const Pill = ({c="var(--acc)",children})=>(
 );
 
 const Num = ({label,val,unit,c="var(--acc)",big})=>(
-  <div style={{background:"linear-gradient(135deg,var(--s2),var(--s3))",border:"1.5px solid var(--b1)",borderRadius:var(--r),padding:"18px 20px",position:"relative",overflow:"hidden"}}>
+  <div style={{background:"linear-gradient(135deg,var(--s2),var(--s3))",border:"1.5px solid var(--b1)",borderRadius:14,padding:"18px 20px",position:"relative",overflow:"hidden"}}>
     <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,${c},transparent)`}}/>
     <div style={{fontSize:11,fontWeight:600,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:8}}>{label}</div>
     <div style={{fontSize:big?32:26,fontWeight:800,color:c,lineHeight:1,fontVariantNumeric:"tabular-nums"}}>
