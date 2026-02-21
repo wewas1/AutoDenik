@@ -45,14 +45,15 @@ const G = () => (
     @keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
     @keyframes glow{0%,100%{opacity:.6}50%{opacity:1}}
     .au{animation:up .22s ease forwards;}
-    @media(max-width:780px){
-      .sidebar{position:fixed!important;left:-290px!important;top:0;z-index:200;transition:left .25s ease;width:280px!important;height:100vh;overflow-y:auto;}
+    @media(max-width:900px){
+      .sidebar{position:fixed!important;left:-300px!important;top:0;z-index:200;transition:left .25s ease;width:280px!important;height:100vh;overflow-y:auto;}
       .sidebar.open{left:0!important;box-shadow:4px 0 30px rgba(0,0,0,.8);}
       .mob-bar{display:flex!important;}
-      .main{padding:12px 12px 80px!important;min-width:0!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important;}
+      .main{padding:12px 12px 80px!important;min-width:0!important;width:100vw!important;max-width:100vw!important;overflow-x:hidden!important;flex:1!important;}
       .overlay{display:block!important;}
       table{font-size:11px!important;}
-      table td,table th{padding:7px 8px!important;white-space:nowrap;}
+      table td,table th{padding:6px 8px!important;}
+      .app-wrap{overflow-x:hidden!important;}
     }
   `}</style>
 );
@@ -588,7 +589,7 @@ export default function App(){
         <div className="overlay" style={{display:"none",position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:199,backdropFilter:"blur(2px)"}} onClick={()=>setSideOpen(false)}/>
 
         {/* SIDEBAR */}
-        <aside className="sidebar" style={{width:270,minHeight:"100vh",background:"var(--s1)",borderRight:"1.5px solid var(--b1)",display:"flex",flexDirection:"column",position:"sticky",top:0,height:"100vh",overflowY:"auto",flexShrink:0,zIndex:200}}>
+        <aside className={`sidebar${sideOpen?" open":""}`} style={{width:280,minHeight:"100vh",background:"var(--s1)",borderRight:"1.5px solid var(--b1)",display:"flex",flexDirection:"column",position:"sticky",top:0,height:"100vh",overflowY:"auto",flexShrink:0,zIndex:200}}>
           {/* Logo */}
           <div style={{padding:"24px 20px 18px",borderBottom:"1.5px solid var(--b1)"}}>
             <div style={{fontSize:24,fontWeight:900,letterSpacing:".02em"}}>
@@ -619,7 +620,7 @@ export default function App(){
         <main className="main" style={{flex:1,padding:"24px 28px",minWidth:0}}>
 
           {/* Mobile top bar */}
-          <div className="mob-bar" style={{display:"none",alignItems:"center",gap:12,marginBottom:16}}>
+          <div className="mob-bar" style={{display:"none",alignItems:"center",gap:12,marginBottom:16,position:"sticky",top:0,zIndex:100,background:"var(--s1)",padding:"10px 0",marginLeft:-12,marginRight:-12,paddingLeft:12,paddingRight:12,borderBottom:"1.5px solid var(--b1)"}}>
             <button onClick={()=>setSideOpen(p=>!p)} style={{background:"var(--s2)",border:"1.5px solid var(--b1)",borderRadius:9,padding:"8px 12px",color:"var(--t1)",fontSize:18}}>☰</button>
             <div style={{fontWeight:800,fontSize:18}}>AUTO<span style={{color:"var(--acc)"}}>DENÍK</span></div>
           </div>
@@ -676,7 +677,7 @@ export default function App(){
         </main>
 
         {/* MOBILE BOTTOM NAV */}
-        <nav style={{display:"none",position:"fixed",bottom:0,left:0,right:0,background:"var(--s1)",borderTop:"1.5px solid var(--b1)",zIndex:100,justifyContent:"space-around",padding:"8px 0 14px"}} className="mob-bar">
+        <nav style={{display:"none",position:"fixed",bottom:0,left:0,right:0,width:"100%",background:"var(--s1)",borderTop:"1.5px solid var(--b1)",zIndex:100,justifyContent:"space-around",padding:"10px 0 16px",boxShadow:"0 -4px 20px rgba(0,0,0,.5)"}} className="mob-bar">
           {[{id:"menu",icon:"🚗",label:"Vozidla"},{id:"fueling",icon:"⛽",label:"Tankování"},{id:"repairs",icon:"🔧",label:"Opravy"},{id:"addons",icon:"📦",label:"Doplňky"}].map(item=>(
             <button key={item.id} onClick={()=>{if(item.id==="menu")setSideOpen(p=>!p);else setTab(item.id);}} style={{background:"none",border:"none",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:tab===item.id?"var(--acc)":"var(--t3)",fontSize:9,fontWeight:600,letterSpacing:".08em",padding:"4px 12px"}}>
               <span style={{fontSize:22}}>{item.icon}</span>
