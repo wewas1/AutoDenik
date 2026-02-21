@@ -46,11 +46,13 @@ const G = () => (
     @keyframes glow{0%,100%{opacity:.6}50%{opacity:1}}
     .au{animation:up .22s ease forwards;}
     @media(max-width:780px){
-      .sidebar{position:fixed!important;left:-280px!important;top:0;z-index:200;transition:left .25s ease;}
-      .sidebar.open{left:0!important;}
+      .sidebar{position:fixed!important;left:-290px!important;top:0;z-index:200;transition:left .25s ease;width:280px!important;height:100vh;overflow-y:auto;}
+      .sidebar.open{left:0!important;box-shadow:4px 0 30px rgba(0,0,0,.8);}
       .mob-bar{display:flex!important;}
-      .main{padding:16px 14px 80px!important;}
+      .main{padding:12px 12px 80px!important;min-width:0!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important;}
       .overlay{display:block!important;}
+      table{font-size:11px!important;}
+      table td,table th{padding:7px 8px!important;white-space:nowrap;}
     }
   `}</style>
 );
@@ -580,7 +582,7 @@ export default function App(){
   return(
     <>
       <G/>
-      <div style={{display:"flex",minHeight:"100vh"}}>
+      <div className="app-wrap" style={{display:"flex",minHeight:"100vh",width:"100%",maxWidth:"100vw",overflowX:"hidden"}}>
 
         {/* Overlay mobile */}
         <div className="overlay" style={{display:"none",position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:199,backdropFilter:"blur(2px)"}} onClick={()=>setSideOpen(false)}/>
