@@ -104,10 +104,15 @@ const IBtn = ({onClick,title,children,danger}) => (
 );
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
-const Modal = ({title,onClose,children}) => (
-  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(8px)"}} onClick={onClose}>
-    <div style={{background:"var(--s1)",borderTop:"1px solid var(--b2)",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:600,maxHeight:"92vh",overflowY:"auto",padding:"0 20px 40px"}} onClick={e=>e.stopPropagation()}>
-      <div style={{width:36,height:3,background:"var(--b2)",borderRadius:2,margin:"14px auto 20px"}}/>
+const Modal = ({title,onClose,children}) => {
+  useEffect(()=>{
+    window.scrollTo(0,0);
+    document.body.style.overflow="hidden";
+    return ()=>{ document.body.style.overflow=""; };
+  },[]);
+  return (
+  <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.75)",zIndex:1000,overflowY:"auto",backdropFilter:"blur(8px)"}} onClick={onClose}>
+    <div style={{background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:20,width:"calc(100% - 32px)",maxWidth:600,margin:"16px auto 40px",padding:"20px 20px 32px"}} onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"1px solid var(--b1)"}}>
         <h2 style={{fontSize:18,fontWeight:500,letterSpacing:"-.01em"}}>{title}</h2>
         <button onClick={onClose} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,color:"var(--t3)",fontSize:16,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>✕</button>
@@ -115,7 +120,8 @@ const Modal = ({title,onClose,children}) => (
       {children}
     </div>
   </div>
-);
+  );
+};
 
 const FR = ({label,children,half}) => (
   <div style={{display:"flex",flexDirection:"column",gap:6,gridColumn:half?"span 1":"1/-1"}}>
