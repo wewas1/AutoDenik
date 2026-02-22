@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import ReactDOM from "react-dom";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const CSS = () => (
@@ -106,20 +107,22 @@ const IBtn = ({onClick,title,children,danger}) => (
 // ── MODAL ─────────────────────────────────────────────────────────────────────
 const Modal = ({title,onClose,children}) => {
   useEffect(()=>{
-    window.scrollTo(0,0);
     document.body.style.overflow="hidden";
     return ()=>{ document.body.style.overflow=""; };
   },[]);
-  return (
-  <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.75)",zIndex:1000,overflowY:"auto",backdropFilter:"blur(8px)"}} onClick={onClose}>
-    <div style={{background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:20,width:"calc(100% - 32px)",maxWidth:600,margin:"16px auto 40px",padding:"20px 20px 32px"}} onClick={e=>e.stopPropagation()}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"1px solid var(--b1)"}}>
-        <h2 style={{fontSize:18,fontWeight:500,letterSpacing:"-.01em"}}>{title}</h2>
-        <button onClick={onClose} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,color:"var(--t3)",fontSize:16,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>✕</button>
+  return ReactDOM.createPortal(
+    <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",background:"rgba(0,0,0,.8)",zIndex:9999,display:"flex",flexDirection:"column",backdropFilter:"blur(10px)"}} onClick={onClose}>
+      <div style={{flex:1,overflowY:"auto",padding:"16px 16px 40px",display:"flex",flexDirection:"column",alignItems:"center"}} onClick={e=>e.stopPropagation()}>
+        <div style={{background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:20,width:"100%",maxWidth:560,padding:"20px 20px 28px"}} onClick={e=>e.stopPropagation()}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"1px solid var(--b1)"}}>
+            <h2 style={{fontSize:18,fontWeight:500,letterSpacing:"-.01em"}}>{title}</h2>
+            <button onClick={onClose} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,color:"var(--t3)",fontSize:16,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>✕</button>
+          </div>
+          {children}
+        </div>
       </div>
-      {children}
-    </div>
-  </div>
+    </div>,
+    document.body
   );
 };
 
