@@ -51,8 +51,8 @@ const uid = () => Math.random().toString(36).slice(2,9);
 
 // sample data
 const DEF_V = [
-  {id:"v1",brand:"Škoda",model:"Octavia",year:2019,vin:"TMBZZZ1Z9K1234567",spz:"1AB 2345",fuel:"Benzín",color:"#4c8eff"},
-  {id:"v2",brand:"Toyota",model:"Yaris",year:2021,vin:"SB1KS3JE20E456789",spz:"2CD 6789",fuel:"Hybrid",color:"#2eff9a"},
+  {id:"v1",brand:"Škoda",model:"Octavia",year:2019,vin:"TMBZZZ1Z9K1234567",spz:"1AB 2345",fuel:"Benzín",color:"#4c8eff",stk:"2025-06-30",pov:"2025-01-15"},
+  {id:"v2",brand:"Toyota",model:"Yaris",year:2021,vin:"SB1KS3JE20E456789",spz:"2CD 6789",fuel:"Hybrid",color:"#2eff9a",stk:"2026-03-20",pov:"2025-08-10"},
 ];
 const DEF_F = [
   {id:"f1",vid:"v1",date:"2024-01-08",location:"Shell Brno",fuelType:"Benzín Natural 95",liters:45.2,pricePerLiter:37.90,total:1713.08,km:87450},
@@ -125,11 +125,11 @@ const FR = ({label,children,half}) => (
 );
 
 const DF = ({from,to,onFrom,onTo}) => (
-  <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-    <span style={{fontSize:11,fontWeight:600,color:"var(--t3)"}}>OD</span>
-    <input type="date" value={from} onChange={e=>onFrom(e.target.value)} style={{width:150,fontSize:14,padding:"8px 10px"}}/>
-    <span style={{fontSize:11,fontWeight:600,color:"var(--t3)"}}>DO</span>
-    <input type="date" value={to} onChange={e=>onTo(e.target.value)} style={{width:150,fontSize:14,padding:"8px 10px"}}/>
+  <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"nowrap",overflowX:"auto"}}>
+    <span style={{fontSize:10,fontWeight:500,color:"var(--t3)",whiteSpace:"nowrap",letterSpacing:".08em"}}>OD</span>
+    <input type="date" value={from} onChange={e=>onFrom(e.target.value)} style={{minWidth:0,flex:1,fontSize:13,padding:"8px 10px"}}/>
+    <span style={{fontSize:10,fontWeight:500,color:"var(--t3)",whiteSpace:"nowrap",letterSpacing:".08em"}}>DO</span>
+    <input type="date" value={to} onChange={e=>onTo(e.target.value)} style={{minWidth:0,flex:1,fontSize:13,padding:"8px 10px"}}/>
   </div>
 );
 
@@ -472,7 +472,7 @@ const VehicleDrawer = ({vehicles,activeVid,setActiveVid,onAdd,onClose}) => (
 // ── VEHICLE FORM ──────────────────────────────────────────────────────────────
 const VForm = ({existing,onSave,onClose}) => {
   const colors = ["#4c8eff","#ff5c2e","#2eff9a","#ffd12e","#a855f7","#ec4899","#06b6d4"];
-  const [form,setForm] = useState(existing||{brand:"",model:"",year:new Date().getFullYear(),vin:"",spz:"",fuel:"Benzín",color:colors[0]});
+  const [form,setForm] = useState(existing||{brand:"",model:"",year:new Date().getFullYear(),vin:"",spz:"",fuel:"Benzín",color:colors[0],stk:"",pov:""});
   const s=(k,v)=>setForm(p=>({...p,[k]:v}));
   return (
     <Modal title={existing?"Upravit vozidlo":"Nové vozidlo"} onClose={onClose}>
@@ -483,6 +483,8 @@ const VForm = ({existing,onSave,onClose}) => {
         <FR label="SPZ" half><input value={form.spz} onChange={e=>s("spz",e.target.value)} placeholder="1AB 2345"/></FR>
         <FR label="VIN"><input value={form.vin} onChange={e=>s("vin",e.target.value)} placeholder="TMBZZZ1Z9K1234567"/></FR>
         <FR label="Palivo"><select value={form.fuel} onChange={e=>s("fuel",e.target.value)}>{["Benzín","Nafta","LPG","CNG","Hybrid","Elektro"].map(o=><option key={o}>{o}</option>)}</select></FR>
+        <FR label="Platnost STK" half><input type="date" value={form.stk||""} onChange={e=>s("stk",e.target.value)}/></FR>
+        <FR label="Platnost POV" half><input type="date" value={form.pov||""} onChange={e=>s("pov",e.target.value)}/></FR>
         <FR label="Barva">
           <div style={{display:"flex",gap:8,flexWrap:"wrap",paddingTop:4}}>
             {colors.map(c=><div key={c} onClick={()=>s("color",c)} style={{width:32,height:32,borderRadius:"50%",background:c,cursor:"pointer",border:form.color===c?"3px solid #fff":"3px solid transparent",boxShadow:form.color===c?`0 0 0 2px ${c}`:"none",transition:"all .15s",touchAction:"manipulation"}}/>)}
@@ -548,23 +550,52 @@ export default function App() {
           {av?(
             <>
               {/* Vehicle info card */}
-              <div style={{background:"var(--s1)",border:"1px solid var(--b1)",borderRadius:16,padding:"20px",marginBottom:18,overflow:"hidden",position:"relative"}}>
-                <div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at top left, ${av.color}08, transparent 60%)`}}/>
-                <div style={{position:"relative",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
-                  <div>
-                    <div style={{fontSize:11,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:6}}>{av.year} · {av.spz}</div>
-                    <div style={{fontSize:24,fontWeight:300,letterSpacing:"-.02em",color:"var(--t1)"}}>{av.brand} <strong style={{fontWeight:600}}>{av.model}</strong></div>
-                    <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:10}}>
-                      <Pill c={av.color}>{av.fuel}</Pill>
+              {(()=>{
+                const now = new Date();
+                const stkDate = av.stk ? new Date(av.stk) : null;
+                const povDate = av.pov ? new Date(av.pov) : null;
+                const daysLeft = d => d ? Math.ceil((d-now)/(1000*60*60*24)) : null;
+                const stkDays = daysLeft(stkDate);
+                const povDays = daysLeft(povDate);
+                const expColor = d => d===null?"var(--t3)":d<0?"var(--red)":d<30?"var(--yellow)":"var(--green)";
+                const expLabel = (d,label) => {
+                  if(d===null) return label+": nezadáno";
+                  if(d<0) return label+": PROŠLÁ!";
+                  if(d<30) return label+": za "+d+" dní";
+                  return label+": "+new Date(d<0?Date.now():Date.now()+d*86400000).toLocaleDateString("cs-CZ");
+                };
+                return (
+                  <div style={{background:"var(--s1)",border:"1px solid var(--b1)",borderRadius:16,padding:"20px",marginBottom:18,overflow:"hidden",position:"relative"}}>
+                    <div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at top left, ${av.color}08, transparent 60%)`}}/>
+                    <div style={{position:"relative",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
+                      <div>
+                        <div style={{fontSize:11,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:6}}>{av.year} · {av.spz}</div>
+                        <div style={{fontSize:24,fontWeight:300,letterSpacing:"-.02em",color:"var(--t1)"}}>{av.brand} <strong style={{fontWeight:600}}>{av.model}</strong></div>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:10}}>
+                          <Pill c={av.color}>{av.fuel}</Pill>
+                        </div>
+                      </div>
+                      <div style={{display:"flex",gap:8}}>
+                        <IBtn onClick={()=>{setEditV(av);setShowVForm(true);}}>✏️</IBtn>
+                        <IBtn onClick={()=>delV(av.id)} danger>🗑</IBtn>
+                      </div>
+                    </div>
+                    {av.vin&&<div style={{fontSize:10,color:"var(--t3)",marginTop:14,fontFamily:"var(--mono)",letterSpacing:".05em"}}>VIN · {av.vin}</div>}
+                    <div style={{marginTop:14,paddingTop:14,borderTop:"1px solid var(--b1)",display:"flex",gap:10,flexWrap:"wrap"}}>
+                      <div style={{flex:1,minWidth:120,background:"var(--s2)",borderRadius:10,padding:"10px 12px",border:`1px solid ${expColor(stkDays)}22`}}>
+                        <div style={{fontSize:9,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:4}}>STK</div>
+                        <div style={{fontSize:13,fontWeight:500,color:expColor(stkDays)}}>{av.stk?new Date(av.stk).toLocaleDateString("cs-CZ"):"—"}</div>
+                        {stkDays!==null&&<div style={{fontSize:10,color:expColor(stkDays),marginTop:2}}>{stkDays<0?"⚠ Prošlá!":stkDays<30?"⚠ Za "+stkDays+" dní":"Za "+stkDays+" dní"}</div>}
+                      </div>
+                      <div style={{flex:1,minWidth:120,background:"var(--s2)",borderRadius:10,padding:"10px 12px",border:`1px solid ${expColor(povDays)}22`}}>
+                        <div style={{fontSize:9,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:4}}>Pojištění (POV)</div>
+                        <div style={{fontSize:13,fontWeight:500,color:expColor(povDays)}}>{av.pov?new Date(av.pov).toLocaleDateString("cs-CZ"):"—"}</div>
+                        {povDays!==null&&<div style={{fontSize:10,color:expColor(povDays),marginTop:2}}>{povDays<0?"⚠ Prošlé!":povDays<30?"⚠ Za "+povDays+" dní":"Za "+povDays+" dní"}</div>}
+                      </div>
                     </div>
                   </div>
-                  <div style={{display:"flex",gap:8}}>
-                    <IBtn onClick={()=>{setEditV(av);setShowVForm(true);}}>✏️</IBtn>
-                    <IBtn onClick={()=>delV(av.id)} danger>🗑</IBtn>
-                  </div>
-                </div>
-                {av.vin&&<div style={{fontSize:10,color:"var(--t3)",marginTop:14,fontFamily:"var(--mono)",letterSpacing:".05em"}}>VIN · {av.vin}</div>}
-              </div>
+                );
+              })()}
 
               {/* Tabs */}
               <div style={{display:"flex",gap:0,marginBottom:20,borderBottom:"1px solid var(--b1)"}}>
