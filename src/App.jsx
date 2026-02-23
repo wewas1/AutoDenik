@@ -13,6 +13,30 @@ const supabase = createClient(SUPA_URL, SUPA_KEY, {
   }
 });
 
+// ── EXPORT ───────────────────────────────────────────────────────────────────
+const exportCSV = (rows, filename) => {
+  if(!rows.length) return;
+  const keys = Object.keys(rows[0]);
+  const csv = [keys.join(";"), ...rows.map(r => keys.map(k => {
+    const v = r[k] ?? "";
+    return typeof v === "string" && v.includes(";") ? `"${v}"` : v;
+  }).join(";"))].join("
+");
+  const blob = new Blob(["﻿"+csv], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+};
+
+const exportJSON = (data, filename) => {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+};
+
 // ── WEBAUTHN / BIOMETRICS ─────────────────────────────────────────────────────
 const WA_RPID = window.location.hostname;
 const WA_ORIGIN = window.location.origin;
@@ -337,9 +361,9 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
     "Orlen Effecta 95",
     "Orlen Blåkläder 100",
     "Globus 95",
-    "── Nafta ───────────────",
-    "Nafta B7",
-    "── Prémiová nafta ──────",
+    "── Diesel ──────────────",
+    "Diesel B7",
+    "── Prémiový Diesel ─────",
     "Shell V-Power Diesel",
     "OMV MaxMotion Diesel",
     "Benzina Verva Diesel",
@@ -594,7 +618,7 @@ const VForm = ({existing,onSave,onClose}) => {
         <FR label="Rok výroby" half><input type="number" inputMode="numeric" value={form.year} onChange={e=>s("year",e.target.value)}/></FR>
         <FR label="SPZ" half><input value={form.spz} onChange={e=>s("spz",e.target.value)} placeholder="1AB 2345"/></FR>
         <FR label="VIN"><input value={form.vin} onChange={e=>s("vin",e.target.value)} placeholder="TMBZZZ1Z9K1234567"/></FR>
-        <FR label="Palivo"><select value={form.fuel} onChange={e=>s("fuel",e.target.value)}>{["Benzín","Nafta","LPG","CNG","Hybrid","Elektro"].map(o=><option key={o}>{o}</option>)}</select></FR>
+        <FR label="Palivo"><select value={form.fuel} onChange={e=>s("fuel",e.target.value)}>{["Benzín","Diesel","LPG","CNG","Hybrid","Elektro"].map(o=><option key={o}>{o}</option>)}</select></FR>
         <FR label="Platnost STK" half><input type="date" value={form.stk||""} onChange={e=>s("stk",e.target.value)}/></FR>
         <FR label="Platnost POV" half><input type="date" value={form.pov||""} onChange={e=>s("pov",e.target.value)}/></FR>
         <FR label="Barva">
@@ -635,6 +659,7 @@ export default function App() {
   const [tab, setTab] = useState("fueling");
   const [showVDrawer, setShowVDrawer] = useState(false);
   const [showVForm, setShowVForm] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const [editV, setEditV] = useState(null);
 
   // Auth check on load
@@ -879,6 +904,7 @@ export default function App() {
             <button onClick={()=>setShowVDrawer(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 14px",color:"var(--t1)",fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,touchAction:"manipulation",letterSpacing:".01em"}}>
               {av?<><span style={{width:6,height:6,borderRadius:"50%",background:av.color,display:"inline-block"}}></span> {av.brand} {av.model}</>:"Vozidlo"} <span style={{color:"var(--t3)",fontSize:10}}>▼</span>
             </button>
+            <button onClick={()=>setShowExport(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 12px",color:"var(--t2)",fontSize:15,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",minWidth:36,minHeight:36}} title="Export dat">⬇</button>
             {bioAvailable&&(
               <button onClick={()=>setOfferBio(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 12px",color:bioStored?"var(--acc)":"var(--t3)",fontSize:16,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",minWidth:36,minHeight:36}} title={bioStored?"Otisk nastaven – klikni pro změnu":"Nastavit otisk prstu"}>👆</button>
             )}
@@ -959,6 +985,38 @@ export default function App() {
 
       {showVDrawer&&<VehicleDrawer vehicles={vehicles} activeVid={activeVid} setActiveVid={setActiveVid} onAdd={()=>setShowVForm(true)} onClose={()=>setShowVDrawer(false)}/>}
       {showVForm&&<VForm existing={editV} onSave={async v=>{await saveVehicle(v);setShowVForm(false);setEditV(null);}} onClose={()=>{setShowVForm(false);setEditV(null);}}/>}
+
+      {/* Export Modal */}
+      {showExport&&ReactDOM.createPortal(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24,backdropFilter:"blur(10px)"}} onClick={()=>setShowExport(false)}>
+          <div style={{background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:20,padding:28,maxWidth:360,width:"100%"}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,paddingBottom:16,borderBottom:"1px solid var(--b1)"}}>
+              <h2 style={{fontSize:18,fontWeight:500}}>Export dat</h2>
+              <button onClick={()=>setShowExport(false)} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,color:"var(--t3)",width:36,height:36,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+            </div>
+            <div style={{fontSize:12,color:"var(--t3)",marginBottom:20,lineHeight:1.6}}>
+              Exportuj svá data do souboru pro zálohu nebo vlastní zpracování. Soubory se uloží do stažených souborů.
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:4}}>CSV – otevřeš v Excelu</div>
+              <button onClick={()=>exportCSV(fueling.map(f=>({datum:f.date,vozidlo:vehicles.find(v=>v.id===f.vid)?.brand+" "+vehicles.find(v=>v.id===f.vid)?.model,misto:f.location,palivo:f.fuelType,litry:f.liters,cena_za_litr:f.pricePerLiter,celkem_kc:f.total,km:f.km})),"tankování.csv")} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:10,padding:"12px 16px",color:"var(--t1)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:20}}>⛽</span> Tankování (.csv)
+              </button>
+              <button onClick={()=>exportCSV(repairs.map(r=>({datum:r.date,vozidlo:vehicles.find(v=>v.id===r.vid)?.brand+" "+vehicles.find(v=>v.id===r.vid)?.model,km:r.km,material:r.material,poznamka:r.note,mnozstvi:r.qty,jednotka:r.unit,material_kc:r.matPrice,prace_kc:r.laborPrice,kdo:r.who,komentar:r.comment})),"opravy.csv")} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:10,padding:"12px 16px",color:"var(--t1)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:20}}>🔧</span> Opravy (.csv)
+              </button>
+              <button onClick={()=>exportCSV(addons.map(a=>({datum:a.date,vozidlo:vehicles.find(v=>v.id===a.vid)?.brand+" "+vehicles.find(v=>v.id===a.vid)?.model,km:a.km,nazev:a.name,typ:a.note,mnozstvi:a.qty,jednotka:a.unit,cena_kc:a.price,komentar:a.comment})),"doplnky.csv")} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:10,padding:"12px 16px",color:"var(--t1)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:20}}>📦</span> Doplňky (.csv)
+              </button>
+              <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",margin:"8px 0 4px"}}>JSON – kompletní záloha</div>
+              <button onClick={()=>exportJSON({vehicles,fueling,repairs,addons,exportDate:new Date().toISOString()},"autodenik-zaloha.json")} style={{background:"var(--s2)",border:"1px solid var(--acc)",borderRadius:10,padding:"12px 16px",color:"var(--acc)",fontSize:14,fontWeight:500,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:20}}>💾</span> Kompletní záloha (.json)
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Offer biometric after login */}
       {offerBio&&ReactDOM.createPortal(
