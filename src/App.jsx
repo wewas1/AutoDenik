@@ -195,11 +195,8 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
   const [fFrom,setFFrom] = useState("");
   const [fTo,setFTo] = useState("");
   const ef = {date:new Date().toISOString().slice(0,10),location:"",fuelType:"Natural 95",liters:"",pricePerLiter:"",total:"",km:""};
-  const isElectric = form.fuelType?.startsWith("Elektřina");
-  const unitL = isElectric ? "kWh" : "l";
-  const unitPrice = isElectric ? "Kč/kWh" : "Kč/l";
-  const unitCons = isElectric ? "kWh/100km" : "l/100km";
   const [form,setForm] = useState(ef);
+  const isElectric = form.fuelType?.startsWith("Elektřina");
 
   const vd = fueling.filter(f=>f.vid===vid).sort((a,b)=>new Date(a.date)-new Date(b.date));
   const enriched = vd.map((f,i)=>{
@@ -227,7 +224,6 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
     }
     setForm(u);
   };
-  const veh = fueling.length===0 ? null : null; // placeholder
   const getDefaultFuel = ()=>{
     // try to match last used fuel for this vehicle
     const last = [...fueling].filter(f=>f.vid===vid).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
@@ -399,7 +395,6 @@ const RepMod = ({vid,repairs,saveRepair,delRepair}) => {
   const tMat = filtered.reduce((s,r)=>s+parseFloat(r.matPrice||0),0);
   const tLab = filtered.reduce((s,r)=>s+parseFloat(r.laborPrice||0),0);
 
-  const veh = fueling.length===0 ? null : null; // placeholder
   const getDefaultFuel = ()=>{
     // try to match last used fuel for this vehicle
     const last = [...fueling].filter(f=>f.vid===vid).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
@@ -489,7 +484,6 @@ const AddMod = ({vid,addons,saveAddon,delAddon}) => {
   const vd = addons.filter(a=>a.vid===vid).sort((a,b)=>new Date(b.date)-new Date(a.date));
   const total = vd.reduce((s,a)=>s+parseFloat(a.price||0),0);
 
-  const veh = fueling.length===0 ? null : null; // placeholder
   const getDefaultFuel = ()=>{
     // try to match last used fuel for this vehicle
     const last = [...fueling].filter(f=>f.vid===vid).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
