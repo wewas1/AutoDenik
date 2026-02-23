@@ -1,6 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { createClient } from "@supabase/supabase-js";
+
+const SUPA_URL = "https://jcpvjfhfgmijxdrldnds.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjcHZqZmhmZ21panhkcmxkbmRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODk5NzcsImV4cCI6MjA4NzM2NTk3N30.J4MGvoHE1_qQgbGk6NLg0R6kvyLy45eXn9GmGmAcnxU";
+const supabase = createClient(SUPA_URL, SUPA_KEY);
 
 const CSS = () => (
   <style>{`
@@ -51,25 +56,7 @@ const fmtD = d => d ? new Date(d).toLocaleDateString("cs-CZ") : "";
 const uid = () => Math.random().toString(36).slice(2,9);
 
 // sample data
-const DEF_V = [
-  {id:"v1",brand:"Škoda",model:"Octavia",year:2019,vin:"TMBZZZ1Z9K1234567",spz:"1AB 2345",fuel:"Benzín",color:"#4c8eff",stk:"2025-06-30",pov:"2025-01-15"},
-  {id:"v2",brand:"Toyota",model:"Yaris",year:2021,vin:"SB1KS3JE20E456789",spz:"2CD 6789",fuel:"Hybrid",color:"#2eff9a",stk:"2026-03-20",pov:"2025-08-10"},
-];
-const DEF_F = [
-  {id:"f1",vid:"v1",date:"2024-01-08",location:"Shell Brno",fuelType:"Benzín Natural 95",liters:45.2,pricePerLiter:37.90,total:1713.08,km:87450},
-  {id:"f2",vid:"v1",date:"2024-01-29",location:"OMV Ostrava",fuelType:"Benzín Natural 95",liters:42.8,pricePerLiter:38.20,total:1635.16,km:87920},
-  {id:"f3",vid:"v1",date:"2024-02-15",location:"Benzina Praha",fuelType:"Benzín Natural 95",liters:48.1,pricePerLiter:37.50,total:1803.75,km:88430},
-  {id:"f4",vid:"v1",date:"2024-03-02",location:"Shell Brno",fuelType:"Benzín Natural 95",liters:44.5,pricePerLiter:38.80,total:1726.60,km:88980},
-  {id:"f5",vid:"v1",date:"2024-03-20",location:"OMV Ostrava",fuelType:"Benzín Natural 95",liters:46.3,pricePerLiter:39.10,total:1810.33,km:89510},
-  {id:"f6",vid:"v1",date:"2024-04-05",location:"Benzina",fuelType:"Benzín Natural 95",liters:43.7,pricePerLiter:38.50,total:1682.45,km:90080},
-];
-const DEF_R = [
-  {id:"r1",vid:"v1",date:"2024-02-10",km:88100,material:"Brzdové destičky přední",note:"ATE 13.0460-2785.2",qty:1,unit:"sada",matPrice:890,laborPrice:600,who:"Autoservis Novák",comment:"Zadní ještě OK"},
-  {id:"r2",vid:"v1",date:"2024-03-15",km:89200,material:"Motorový olej 5W-40",note:"Castrol Edge 5W-40",qty:5,unit:"l",matPrice:750,laborPrice:350,who:"Svépomocí",comment:""},
-];
-const DEF_A = [
-  {id:"a1",vid:"v1",date:"2024-01-15",km:87600,name:"Přední kamera",note:"Viofo A119 Mini 2",qty:1,unit:"ks",price:2890,comment:"4K GPS WDR"},
-];
+// Data se načítají ze Supabase
 
 // ── UI primitives ─────────────────────────────────────────────────────────────
 const Pill = ({c="var(--acc)",children}) => (
@@ -143,7 +130,7 @@ const DF = ({from,to,onFrom,onTo}) => (
 );
 
 // ── FUELING ───────────────────────────────────────────────────────────────────
-const FuelMod = ({vid,fueling,setFueling}) => {
+const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
   const [showF,setShowF] = useState(false);
   const [editId,setEditId] = useState(null);
   const [fFrom,setFFrom] = useState("");
@@ -179,13 +166,13 @@ const FuelMod = ({vid,fueling,setFueling}) => {
   };
   const openNew=()=>{setForm(ef);setEditId(null);setShowF(true);};
   const openEdit=f=>{setForm({...f,liters:String(f.liters),pricePerLiter:String(f.pricePerLiter),km:String(f.km)});setEditId(f.id);setShowF(true);};
-  const save=()=>{
+  const save=async()=>{
     const total=parseFloat(form.liters)*parseFloat(form.pricePerLiter);
     const rec={...form,vid,id:editId||uid(),liters:parseFloat(form.liters),pricePerLiter:parseFloat(form.pricePerLiter),total:isNaN(total)?parseFloat(form.total)||0:total,km:parseInt(form.km)};
-    setFueling(p=>editId?p.map(f=>f.id===editId?rec:f):[...p,rec]);
+    await saveFuel(rec, editId||null);
     setShowF(false);
   };
-  const del=id=>{if(window.confirm("Smazat záznam?"))setFueling(p=>p.filter(f=>f.id!==id));};
+  const del=id=>{if(window.confirm("Smazat záznam?"))delFuel(id);};
 
   return (
     <div className="au">
@@ -283,7 +270,7 @@ const FuelMod = ({vid,fueling,setFueling}) => {
 };
 
 // ── REPAIRS ───────────────────────────────────────────────────────────────────
-const RepMod = ({vid,repairs,setRepairs}) => {
+const RepMod = ({vid,repairs,saveRepair,delRepair}) => {
   const [showF,setShowF] = useState(false);
   const [editId,setEditId] = useState(null);
   const [fFrom,setFFrom] = useState("");
@@ -304,12 +291,12 @@ const RepMod = ({vid,repairs,setRepairs}) => {
 
   const openNew=()=>{setForm(ef);setEditId(null);setShowF(true);};
   const openEdit=r=>{setForm({...r,matPrice:String(r.matPrice),laborPrice:String(r.laborPrice),km:String(r.km)});setEditId(r.id);setShowF(true);};
-  const save=()=>{
+  const save=async()=>{
     const rec={...form,vid,id:editId||uid(),matPrice:parseFloat(form.matPrice)||0,laborPrice:parseFloat(form.laborPrice)||0,km:parseInt(form.km)||0};
-    setRepairs(p=>editId?p.map(r=>r.id===editId?rec:r):[...p,rec]);
+    await saveRepair(rec, editId||null);
     setShowF(false);
   };
-  const del=id=>{if(window.confirm("Smazat?"))setRepairs(p=>p.filter(r=>r.id!==id));};
+  const del=id=>{if(window.confirm("Smazat?"))delRepair(id);};
 
   return (
     <div className="au">
@@ -376,7 +363,7 @@ const RepMod = ({vid,repairs,setRepairs}) => {
 };
 
 // ── ADDONS ────────────────────────────────────────────────────────────────────
-const AddMod = ({vid,addons,setAddons}) => {
+const AddMod = ({vid,addons,saveAddon,delAddon}) => {
   const [showF,setShowF] = useState(false);
   const [editId,setEditId] = useState(null);
   const ef = {date:new Date().toISOString().slice(0,10),km:"",name:"",note:"",qty:"1",unit:"ks",price:"",comment:""};
@@ -388,12 +375,12 @@ const AddMod = ({vid,addons,setAddons}) => {
 
   const openNew=()=>{setForm(ef);setEditId(null);setShowF(true);};
   const openEdit=a=>{setForm({...a,price:String(a.price),km:String(a.km)});setEditId(a.id);setShowF(true);};
-  const save=()=>{
+  const save=async()=>{
     const rec={...form,vid,id:editId||uid(),price:parseFloat(form.price)||0,km:parseInt(form.km)||0};
-    setAddons(p=>editId?p.map(a=>a.id===editId?rec:a):[...p,rec]);
+    await saveAddon(rec, editId||null);
     setShowF(false);
   };
-  const del=id=>{if(window.confirm("Smazat?"))setAddons(p=>p.filter(a=>a.id!==id));};
+  const del=id=>{if(window.confirm("Smazat?"))delAddon(id);};
 
   return (
     <div className="au">
@@ -510,33 +497,183 @@ const VForm = ({existing,onSave,onClose}) => {
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 export default function App() {
-  const [vehicles,setVehicles] = useState(()=>JSON.parse(localStorage.getItem("ad_v")||"null")||DEF_V);
-  const [fueling,setFueling] = useState(()=>JSON.parse(localStorage.getItem("ad_f")||"null")||DEF_F);
-  const [repairs,setRepairs] = useState(()=>JSON.parse(localStorage.getItem("ad_r")||"null")||DEF_R);
-  const [addons,setAddons] = useState(()=>JSON.parse(localStorage.getItem("ad_a")||"null")||DEF_A);
-  const [activeVid,setActiveVid] = useState(DEF_V[0].id);
-  const [tab,setTab] = useState("fueling");
-  const [showVDrawer,setShowVDrawer] = useState(false);
-  const [showVForm,setShowVForm] = useState(false);
-  const [editV,setEditV] = useState(null);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authMode, setAuthMode] = useState("login"); // login | register
+  const [authError, setAuthError] = useState("");
+  const [authMsg, setAuthMsg] = useState("");
 
-  useEffect(()=>{localStorage.setItem("ad_v",JSON.stringify(vehicles));},[vehicles]);
-  useEffect(()=>{localStorage.setItem("ad_f",JSON.stringify(fueling));},[fueling]);
-  useEffect(()=>{localStorage.setItem("ad_r",JSON.stringify(repairs));},[repairs]);
-  useEffect(()=>{localStorage.setItem("ad_a",JSON.stringify(addons));},[addons]);
+  const [vehicles, setVehicles] = useState([]);
+  const [fueling, setFueling] = useState([]);
+  const [repairs, setRepairs] = useState([]);
+  const [addons, setAddons] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const av = vehicles.find(v=>v.id===activeVid);
-  const TABS = [{id:"fueling",icon:"⛽",label:"Tankování"},{id:"repairs",icon:"🔧",label:"Opravy"},{id:"addons",icon:"📦",label:"Doplňky"}];
+  const [activeVid, setActiveVid] = useState(null);
+  const [tab, setTab] = useState("fueling");
+  const [showVDrawer, setShowVDrawer] = useState(false);
+  const [showVForm, setShowVForm] = useState(false);
+  const [editV, setEditV] = useState(null);
 
-  const delV = id=>{
+  // Auth check on load
+  useEffect(()=>{
+    supabase.auth.getSession().then(({data:{session}})=>{
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+    const {data:{subscription}} = supabase.auth.onAuthStateChange((_,session)=>{
+      setUser(session?.user ?? null);
+    });
+    return ()=>subscription.unsubscribe();
+  },[]);
+
+  // Load data when user logs in
+  useEffect(()=>{
+    if(!user) return;
+    loadAll();
+  },[user]);
+
+  const loadAll = async ()=>{
+    setLoading(true);
+    const uid = user.id;
+    const [v,f,r,a] = await Promise.all([
+      supabase.from("vehicles").select("*").eq("user_id",uid).order("created_at"),
+      supabase.from("fueling").select("*").eq("user_id",uid).order("date"),
+      supabase.from("repairs").select("*").eq("user_id",uid).order("date",{ascending:false}),
+      supabase.from("addons").select("*").eq("user_id",uid).order("date",{ascending:false}),
+    ]);
+    const vs = v.data||[];
+    setVehicles(vs);
+    setFueling((f.data||[]).map(x=>({...x,vid:x.vehicle_id,fuelType:x.fuel_type,pricePerLiter:x.price_per_liter})));
+    setRepairs((r.data||[]).map(x=>({...x,vid:x.vehicle_id,matPrice:x.mat_price,laborPrice:x.labor_price})));
+    setAddons((a.data||[]).map(x=>({...x,vid:x.vehicle_id})));
+    if(vs.length>0 && !activeVid) setActiveVid(vs[0].id);
+    setLoading(false);
+  };
+
+  // Auth handlers
+  const login = async()=>{
+    setAuthError("");
+    const {error} = await supabase.auth.signInWithPassword({email,password});
+    if(error) setAuthError(error.message==="Invalid login credentials"?"Špatný email nebo heslo":error.message);
+  };
+  const register = async()=>{
+    setAuthError(""); setAuthMsg("");
+    const {error} = await supabase.auth.signUp({email,password});
+    if(error) setAuthError(error.message);
+    else setAuthMsg("Registrace úspěšná! Zkontroluj email a potvrď účet.");
+  };
+  const logout = async()=>{ await supabase.auth.signOut(); setVehicles([]); setFueling([]); setRepairs([]); setAddons([]); setActiveVid(null); };
+
+  // CRUD – Vehicles
+  const saveVehicle = async(v)=>{
+    if(editV) {
+      await supabase.from("vehicles").update({brand:v.brand,model:v.model,year:v.year,vin:v.vin,spz:v.spz,fuel:v.fuel,color:v.color,stk:v.stk||null,pov:v.pov||null}).eq("id",v.id);
+      setVehicles(p=>p.map(x=>x.id===v.id?{...x,...v}:x));
+    } else {
+      const {data} = await supabase.from("vehicles").insert({...v,id:undefined,user_id:user.id}).select().single();
+      if(data){ setVehicles(p=>[...p,data]); setActiveVid(data.id); }
+    }
+  };
+  const delVehicle = async(id)=>{
     if(!window.confirm("Smazat vozidlo a všechny záznamy?"))return;
+    await supabase.from("vehicles").delete().eq("id",id);
     setVehicles(p=>p.filter(v=>v.id!==id));
     setFueling(p=>p.filter(f=>f.vid!==id));
     setRepairs(p=>p.filter(r=>r.vid!==id));
     setAddons(p=>p.filter(a=>a.vid!==id));
-    if(activeVid===id)setActiveVid(vehicles.find(v=>v.id!==id)?.id);
+    setActiveVid(vehicles.find(v=>v.id!==id)?.id||null);
   };
 
+  // CRUD – Fueling
+  const saveFuel = async(rec,editId)=>{
+    const row = {user_id:user.id,vehicle_id:rec.vid,date:rec.date,location:rec.location,fuel_type:rec.fuelType,liters:rec.liters,price_per_liter:rec.pricePerLiter,total:rec.total,km:rec.km};
+    if(editId){
+      await supabase.from("fueling").update(row).eq("id",editId);
+      setFueling(p=>p.map(x=>x.id===editId?{...x,...rec}:x));
+    } else {
+      const {data} = await supabase.from("fueling").insert(row).select().single();
+      if(data) setFueling(p=>[...p,{...data,vid:data.vehicle_id,fuelType:data.fuel_type,pricePerLiter:data.price_per_liter}]);
+    }
+  };
+  const delFuel = async(id)=>{ await supabase.from("fueling").delete().eq("id",id); setFueling(p=>p.filter(x=>x.id!==id)); };
+
+  // CRUD – Repairs
+  const saveRepair = async(rec,editId)=>{
+    const row = {user_id:user.id,vehicle_id:rec.vid,date:rec.date,km:rec.km,material:rec.material,note:rec.note,qty:rec.qty,unit:rec.unit,mat_price:rec.matPrice,labor_price:rec.laborPrice,who:rec.who,comment:rec.comment};
+    if(editId){
+      await supabase.from("repairs").update(row).eq("id",editId);
+      setRepairs(p=>p.map(x=>x.id===editId?{...x,...rec}:x));
+    } else {
+      const {data} = await supabase.from("repairs").insert(row).select().single();
+      if(data) setRepairs(p=>[...p,{...data,vid:data.vehicle_id,matPrice:data.mat_price,laborPrice:data.labor_price}]);
+    }
+  };
+  const delRepair = async(id)=>{ await supabase.from("repairs").delete().eq("id",id); setRepairs(p=>p.filter(x=>x.id!==id)); };
+
+  // CRUD – Addons
+  const saveAddon = async(rec,editId)=>{
+    const row = {user_id:user.id,vehicle_id:rec.vid,date:rec.date,km:rec.km,name:rec.name,note:rec.note,qty:rec.qty,unit:rec.unit,price:rec.price,comment:rec.comment};
+    if(editId){
+      await supabase.from("addons").update(row).eq("id",editId);
+      setAddons(p=>p.map(x=>x.id===editId?{...x,...rec}:x));
+    } else {
+      const {data} = await supabase.from("addons").insert(row).select().single();
+      if(data) setAddons(p=>[...p,{...data,vid:data.vehicle_id}]);
+    }
+  };
+  const delAddon = async(id)=>{ await supabase.from("addons").delete().eq("id",id); setAddons(p=>p.filter(x=>x.id!==id)); };
+
+  const av = vehicles.find(v=>v.id===activeVid);
+  const TABS = [{id:"fueling",icon:"⛽",label:"Tankování"},{id:"repairs",icon:"🔧",label:"Opravy"},{id:"addons",icon:"📦",label:"Doplňky"}];
+
+  // ── AUTH SCREEN ───────────────────────────────────────────────────────────
+  if(authLoading) return (
+    <>
+      <CSS/>
+      <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--t3)"}}>
+        <div>Načítám...</div>
+      </div>
+    </>
+  );
+
+  if(!user) return (
+    <>
+      <CSS/>
+      <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24,background:"var(--bg)"}}>
+        <div style={{width:"100%",maxWidth:380}}>
+          <div style={{textAlign:"center",marginBottom:32}}>
+            <div style={{fontSize:22,fontWeight:600,letterSpacing:".15em",color:"var(--t1)",textTransform:"uppercase",marginBottom:6}}>AutoDeník</div>
+            <div style={{fontSize:12,color:"var(--t3)",letterSpacing:".08em"}}>EVIDENCE VOZIDEL</div>
+          </div>
+          <div style={{background:"var(--s1)",border:"1px solid var(--b1)",borderRadius:20,padding:28}}>
+            <div style={{display:"flex",gap:0,marginBottom:24,background:"var(--s2)",borderRadius:10,padding:4}}>
+              {[["login","Přihlásit se"],["register","Registrovat"]].map(([m,l])=>(
+                <button key={m} onClick={()=>{setAuthMode(m);setAuthError("");setAuthMsg("");}} style={{flex:1,background:authMode===m?"var(--s1)":"none",border:authMode===m?"1px solid var(--b2)":"1px solid transparent",borderRadius:8,padding:"9px",color:authMode===m?"var(--t1)":"var(--t3)",fontSize:13,fontWeight:500,transition:"all .2s",touchAction:"manipulation"}}>{l}</button>
+              ))}
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:14}}>
+              <div>
+                <label style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",display:"block",marginBottom:6}}>Email</label>
+                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="vas@email.cz" onKeyDown={e=>e.key==="Enter"&&(authMode==="login"?login():register())}/>
+              </div>
+              <div>
+                <label style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",display:"block",marginBottom:6}}>Heslo</label>
+                <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&(authMode==="login"?login():register())}/>
+              </div>
+              {authError&&<div style={{fontSize:12,color:"var(--red)",padding:"10px 12px",background:"rgba(224,92,92,.1)",borderRadius:8,border:"1px solid rgba(224,92,92,.2)"}}>{authError}</div>}
+              {authMsg&&<div style={{fontSize:12,color:"var(--green)",padding:"10px 12px",background:"rgba(78,203,113,.1)",borderRadius:8,border:"1px solid rgba(78,203,113,.2)"}}>{authMsg}</div>}
+              <Btn onClick={authMode==="login"?login:register} full>{authMode==="login"?"Přihlásit se":"Zaregistrovat"}</Btn>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  // ── MAIN APP ──────────────────────────────────────────────────────────────
   return (
     <>
       <CSS/>
@@ -545,18 +682,21 @@ export default function App() {
         {/* TOP BAR */}
         <div style={{position:"sticky",top:0,zIndex:100,background:"rgba(10,10,10,.92)",borderBottom:"1px solid var(--b1)",padding:"14px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",backdropFilter:"blur(20px)"}}>
           <div style={{fontSize:17,fontWeight:600,letterSpacing:".15em",color:"var(--t1)",textTransform:"uppercase"}}>AutoDeník</div>
-          <button onClick={()=>setShowVDrawer(true)} style={{
-            background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,
-            padding:"8px 14px",color:"var(--t1)",fontSize:13,fontWeight:500,
-            display:"flex",alignItems:"center",gap:8,touchAction:"manipulation",letterSpacing:".01em",
-          }}>
-            {av?<><span style={{width:6,height:6,borderRadius:"50%",background:av.color,display:"inline-block"}}></span> {av.brand} {av.model}</>:"Vybrat vozidlo"} <span style={{color:"var(--t3)",fontSize:10}}>▼</span>
-          </button>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <button onClick={()=>setShowVDrawer(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 14px",color:"var(--t1)",fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,touchAction:"manipulation",letterSpacing:".01em"}}>
+              {av?<><span style={{width:6,height:6,borderRadius:"50%",background:av.color,display:"inline-block"}}></span> {av.brand} {av.model}</>:"Vozidlo"} <span style={{color:"var(--t3)",fontSize:10}}>▼</span>
+            </button>
+            <button onClick={logout} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 10px",color:"var(--t3)",fontSize:12,touchAction:"manipulation"}} title="Odhlásit">⏻</button>
+          </div>
         </div>
 
         {/* CONTENT */}
         <div style={{flex:1,padding:"16px 16px 100px",overflowX:"hidden"}}>
-          {av?(
+          {loading?(
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"40vh",color:"var(--t3)"}}>
+              <div>Načítám data...</div>
+            </div>
+          ):av?(
             <>
               {/* Vehicle info card */}
               {(()=>{
@@ -567,12 +707,6 @@ export default function App() {
                 const stkDays = daysLeft(stkDate);
                 const povDays = daysLeft(povDate);
                 const expColor = d => d===null?"var(--t3)":d<0?"var(--red)":d<30?"var(--yellow)":"var(--green)";
-                const expLabel = (d,label) => {
-                  if(d===null) return label+": nezadáno";
-                  if(d<0) return label+": PROŠLÁ!";
-                  if(d<30) return label+": za "+d+" dní";
-                  return label+": "+new Date(d<0?Date.now():Date.now()+d*86400000).toLocaleDateString("cs-CZ");
-                };
                 return (
                   <div style={{background:"var(--s1)",border:"1px solid var(--b1)",borderRadius:16,padding:"20px",marginBottom:18,overflow:"hidden",position:"relative"}}>
                     <div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at top left, ${av.color}08, transparent 60%)`}}/>
@@ -586,7 +720,7 @@ export default function App() {
                       </div>
                       <div style={{display:"flex",gap:8}}>
                         <IBtn onClick={()=>{setEditV(av);setShowVForm(true);}}>✏️</IBtn>
-                        <IBtn onClick={()=>delV(av.id)} danger>🗑</IBtn>
+                        <IBtn onClick={()=>delVehicle(av.id)} danger>🗑</IBtn>
                       </div>
                     </div>
                     {av.vin&&<div style={{fontSize:10,color:"var(--t3)",marginTop:14,fontFamily:"var(--mono)",letterSpacing:".05em"}}>VIN · {av.vin}</div>}
@@ -609,36 +743,26 @@ export default function App() {
               {/* Tabs */}
               <div style={{display:"flex",gap:0,marginBottom:20,borderBottom:"1px solid var(--b1)"}}>
                 {TABS.map(t=>(
-                  <button key={t.id} onClick={()=>setTab(t.id)} style={{
-                    flex:1,background:"none",border:"none",
-                    borderBottom:tab===t.id?`2px solid var(--acc)`:"2px solid transparent",
-                    padding:"12px 4px",marginBottom:"-1px",
-                    color:tab===t.id?"var(--acc)":"var(--t3)",
-                    fontWeight:tab===t.id?600:400,fontSize:13,
-                    letterSpacing:".02em",transition:"all .2s",touchAction:"manipulation",
-                  }}>{t.icon} {t.label}</button>
+                  <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,background:"none",border:"none",borderBottom:tab===t.id?"2px solid var(--acc)":"2px solid transparent",padding:"12px 4px",marginBottom:"-1px",color:tab===t.id?"var(--acc)":"var(--t3)",fontWeight:tab===t.id?600:400,fontSize:13,letterSpacing:".02em",transition:"all .2s",touchAction:"manipulation"}}>{t.icon} {t.label}</button>
                 ))}
               </div>
 
-              {tab==="fueling"&&<FuelMod vid={activeVid} fueling={fueling} setFueling={setFueling}/>}
-              {tab==="repairs"&&<RepMod vid={activeVid} repairs={repairs} setRepairs={setRepairs}/>}
-              {tab==="addons"&&<AddMod vid={activeVid} addons={addons} setAddons={setAddons}/>}
+              {tab==="fueling"&&<FuelMod vid={activeVid} fueling={fueling} saveFuel={saveFuel} delFuel={delFuel}/>}
+              {tab==="repairs"&&<RepMod vid={activeVid} repairs={repairs} saveRepair={saveRepair} delRepair={delRepair}/>}
+              {tab==="addons"&&<AddMod vid={activeVid} addons={addons} saveAddon={saveAddon} delAddon={delAddon}/>}
             </>
           ):(
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"60vh",gap:16,color:"var(--t3)"}}>
               <div style={{fontSize:56}}>🚗</div>
-              <div style={{fontSize:18,fontWeight:600}}>Zatím žádné vozidlo</div>
+              <div style={{fontSize:18,fontWeight:500}}>Zatím žádné vozidlo</div>
               <Btn onClick={()=>setShowVForm(true)}>+ Přidat vozidlo</Btn>
             </div>
           )}
         </div>
-
-        {/* BOTTOM SAFE AREA */}
-        <div style={{height:"env(safe-area-inset-bottom,0px)"}}/>
       </div>
 
       {showVDrawer&&<VehicleDrawer vehicles={vehicles} activeVid={activeVid} setActiveVid={setActiveVid} onAdd={()=>setShowVForm(true)} onClose={()=>setShowVDrawer(false)}/>}
-      {showVForm&&<VForm existing={editV} onSave={v=>setVehicles(p=>editV?p.map(x=>x.id===v.id?v:x):[...p,v])} onClose={()=>{setShowVForm(false);setEditV(null);}}/>}
+      {showVForm&&<VForm existing={editV} onSave={v=>{saveVehicle(v);}} onClose={()=>{setShowVForm(false);setEditV(null);}}/>}
     </>
   );
 }
