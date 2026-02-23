@@ -580,8 +580,14 @@ export default function App() {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
-    const {data:{subscription}} = supabase.auth.onAuthStateChange((_,session)=>{
+    const {data:{subscription}} = supabase.auth.onAuthStateChange((event,session)=>{
       setUser(session?.user ?? null);
+      // When user just signed in, offer biometric if available and not yet set
+      if(event==="SIGNED_IN" && session?.user){
+        isBiometricAvailable().then(avail=>{
+          if(avail && !hasBiometricStored()) setOfferBio(true);
+        });
+      }
     });
     isBiometricAvailable().then(setBioAvailable);
     setBioStored(hasBiometricStored());
@@ -617,10 +623,7 @@ export default function App() {
     setAuthError("");
     const {data,error} = await supabase.auth.signInWithPassword({email,password});
     if(error){ setAuthError(error.message==="Invalid login credentials"?"Špatný email nebo heslo":error.message); return; }
-    // After successful login, offer biometric registration if available and not yet stored
-    if(data.user && bioAvailable && !hasBiometricStored()){
-      setOfferBio(true);
-    }
+    // offerBio is handled by onAuthStateChange
   };
 
   const loginBio = async()=>{
