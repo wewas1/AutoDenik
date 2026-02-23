@@ -5,7 +5,13 @@ import { createClient } from "@supabase/supabase-js";
 
 const SUPA_URL = "https://jcpvjfhfgmijxdrldnds.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjcHZqZmhmZ21panhkcmxkbmRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODk5NzcsImV4cCI6MjA4NzM2NTk3N30.J4MGvoHE1_qQgbGk6NLg0R6kvyLy45eXn9GmGmAcnxU";
-const supabase = createClient(SUPA_URL, SUPA_KEY);
+const supabase = createClient(SUPA_URL, SUPA_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    storageKey: "ad_session",
+  }
+});
 
 // ── WEBAUTHN / BIOMETRICS ─────────────────────────────────────────────────────
 const WA_RPID = window.location.hostname;
@@ -762,6 +768,7 @@ export default function App() {
               {authError&&<div style={{fontSize:12,color:"var(--red)",padding:"10px 12px",background:"rgba(224,92,92,.1)",borderRadius:8,border:"1px solid rgba(224,92,92,.2)"}}>{authError}</div>}
               {authMsg&&<div style={{fontSize:12,color:"var(--green)",padding:"10px 12px",background:"rgba(78,203,113,.1)",borderRadius:8,border:"1px solid rgba(78,203,113,.2)"}}>{authMsg}</div>}
               <Btn onClick={authMode==="login"?login:register} full>{authMode==="login"?"Přihlásit se":"Zaregistrovat"}</Btn>
+              {authMode==="login"&&<div style={{fontSize:11,color:"var(--t3)",textAlign:"center"}}>Přihlášení vydrží 60 dní bez nutnosti zadávat heslo znovu</div>}
               {authMode==="login"&&bioAvailable&&bioStored&&(
                 <button onClick={loginBio} disabled={bioLoading} style={{
                   background:"none",border:"1px solid var(--b2)",borderRadius:10,
