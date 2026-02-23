@@ -194,7 +194,11 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
   const [editId,setEditId] = useState(null);
   const [fFrom,setFFrom] = useState("");
   const [fTo,setFTo] = useState("");
-  const ef = {date:new Date().toISOString().slice(0,10),location:"",fuelType:"Benzín Natural 95",liters:"",pricePerLiter:"",total:"",km:""};
+  const ef = {date:new Date().toISOString().slice(0,10),location:"",fuelType:"Natural 95",liters:"",pricePerLiter:"",total:"",km:""};
+  const isElectric = form.fuelType?.startsWith("Elektřina");
+  const unitL = isElectric ? "kWh" : "l";
+  const unitPrice = isElectric ? "Kč/kWh" : "Kč/l";
+  const unitCons = isElectric ? "kWh/100km" : "l/100km";
   const [form,setForm] = useState(ef);
 
   const vd = fueling.filter(f=>f.vid===vid).sort((a,b)=>new Date(a.date)-new Date(b.date));
@@ -223,7 +227,13 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
     }
     setForm(u);
   };
-  const openNew=()=>{setForm(ef);setEditId(null);setShowF(true);};
+  const veh = fueling.length===0 ? null : null; // placeholder
+  const getDefaultFuel = ()=>{
+    // try to match last used fuel for this vehicle
+    const last = [...fueling].filter(f=>f.vid===vid).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+    return last?.fuelType || "Natural 95";
+  };
+  const openNew=()=>{setForm({...ef,fuelType:getDefaultFuel()});setEditId(null);setShowF(true);};
   const openEdit=f=>{setForm({...f,liters:String(f.liters),pricePerLiter:String(f.pricePerLiter),km:String(f.km)});setEditId(f.id);setShowF(true);};
   const save=async()=>{
     const total=parseFloat(form.liters)*parseFloat(form.pricePerLiter);
@@ -237,7 +247,7 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
     <div className="au">
       {/* Stats */}
       <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
-        <StatBox label="Průměrná spotřeba" val={avgCons?fmt(avgCons,1):"—"} unit="l/100km" c="var(--acc)"/>
+        <StatBox label="Průměrná spotřeba" val={avgCons?fmt(avgCons,1):"—"} unit={fueling.filter(f=>f.vid===vid&&f.fuelType?.startsWith("Elektřina")).length>fueling.filter(f=>f.vid===vid).length/2?"kWh/100km":"l/100km"} c="var(--acc)"/>
         <StatBox label="Celková útrata" val={fmt(totalCost)} unit="Kč" c="var(--yellow)"/>
       </div>
       <StatBox label="Počet tankování" val={filtered.length} unit="záznamů" c="var(--blue)"/>
@@ -281,16 +291,16 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
               </div>
               <div style={{textAlign:"right"}}>
                 <div style={{fontSize:20,fontWeight:300,color:"var(--t1)",fontFamily:"var(--mono)",letterSpacing:"-.02em"}}>{fmt(f.total)}<span style={{fontSize:12,color:"var(--t3)",marginLeft:4}}>Kč</span></div>
-                <div style={{fontSize:11,color:"var(--t3)",marginTop:2,fontFamily:"var(--mono)"}}>{fmt(f.pricePerLiter,2)} Kč/l</div>
+                <div style={{fontSize:11,color:"var(--t3)",marginTop:2,fontFamily:"var(--mono)"}}>{fmt(f.pricePerLiter,2)} {f.fuelType?.startsWith("Elektřina")?"Kč/kWh":"Kč/l"}</div>
               </div>
             </div>
             <div style={{height:"1px",background:"var(--b1)",marginBottom:12}}/>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                <Pill c="var(--t2)">{fmt(f.liters,1)} l</Pill>
+                <Pill c="var(--t2)">{fmt(f.liters,1)} {f.fuelType?.startsWith("Elektřina")?"kWh":"l"}</Pill>
                 <Pill c="var(--t2)">{fmt(f.km)} km</Pill>
                 {f.driven&&<Pill c="var(--green)">↑ {fmt(f.driven)} km</Pill>}
-                {f.cons&&<Pill c="var(--acc)">{fmt(f.cons,1)} l/100</Pill>}
+                {f.cons&&<Pill c="var(--acc)">{fmt(f.cons,1)} {f.fuelType?.startsWith("Elektřina")?"kWh/100":"l/100"}</Pill>}
               </div>
               <div style={{display:"flex",gap:6}}>
                 <IBtn onClick={()=>openEdit(f)}>✏️</IBtn>
@@ -313,9 +323,50 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
             <FR label="Datum" half><input type="date" value={form.date} onChange={e=>sf("date",e.target.value)}/></FR>
             <FR label="Stav km" half><input type="number" inputMode="numeric" value={form.km} onChange={e=>sf("km",e.target.value)} placeholder="89500"/></FR>
             <FR label="Místo tankování"><input value={form.location} onChange={e=>sf("location",e.target.value)} placeholder="Shell, OMV..."/></FR>
-            <FR label="Typ paliva"><select value={form.fuelType} onChange={e=>sf("fuelType",e.target.value)}>{["Benzín Natural 95","Benzín Natural 98","Nafta","LPG","CNG","Hybrid","Elektřina"].map(o=><option key={o}>{o}</option>)}</select></FR>
-            <FR label="Litry" half><input type="number" inputMode="decimal" step=".01" value={form.liters} onChange={e=>sf("liters",e.target.value)} placeholder="45.5"/></FR>
-            <FR label="Kč / litr" half><input type="number" inputMode="decimal" step=".01" value={form.pricePerLiter} onChange={e=>sf("pricePerLiter",e.target.value)} placeholder="38.90"/></FR>
+            <FR label="Typ paliva"><select value={form.fuelType} onChange={e=>sf("fuelType",e.target.value)}>
+  {[
+    "── Benzín ──────────────",
+    "Natural 95",
+    "Natural 98",
+    "── Prémiový benzín ─────",
+    "Shell V-Power 95",
+    "Shell V-Power Racing 98",
+    "OMV MaxMotion 95",
+    "OMV MaxMotion 100",
+    "Benzina Verva 95",
+    "Benzina Verva Racing 100",
+    "EuroOil Excellium 95",
+    "MOL Evo 95",
+    "MOL Evo 100",
+    "Orlen Effecta 95",
+    "Orlen Blåkläder 100",
+    "Globus 95",
+    "── Nafta ───────────────",
+    "Nafta B7",
+    "── Prémiová nafta ──────",
+    "Shell V-Power Diesel",
+    "OMV MaxMotion Diesel",
+    "Benzina Verva Diesel",
+    "EuroOil Excellium Diesel",
+    "MOL Evo Diesel",
+    "Orlen Effecta Diesel",
+    "Globus Diesel",
+    "── LPG / CNG ───────────",
+    "LPG",
+    "CNG",
+    "── Elektřina ───────────",
+    "Elektřina (AC)",
+    "Elektřina (DC rychlé)",
+    "── Ostatní ─────────────",
+    "AdBlue",
+    "Vodík",
+  ].map(o => o.startsWith("──")
+    ? <option key={o} disabled style={{color:"#555",fontSize:11}}>{o}</option>
+    : <option key={o}>{o}</option>
+  )}
+</select></FR>
+            <FR label={isElectric?"kWh":"Litry"} half><input type="number" inputMode="decimal" step=".01" value={form.liters} onChange={e=>sf("liters",e.target.value)} placeholder={isElectric?"55.0":"45.5"}/></FR>
+            <FR label={isElectric?"Kč / kWh":"Kč / litr"} half><input type="number" inputMode="decimal" step=".01" value={form.pricePerLiter} onChange={e=>sf("pricePerLiter",e.target.value)} placeholder={isElectric?"5.50":"38.90"}/></FR>
             <FR label="Celkem Kč"><input type="number" inputMode="decimal" step=".01" value={form.total||""} onChange={e=>sf("total",e.target.value)} placeholder="Vypočítá se automaticky" style={{color:"var(--acc)",fontWeight:700}}/></FR>
           </div>
           <div style={{display:"flex",gap:10,marginTop:22}}>
@@ -348,7 +399,13 @@ const RepMod = ({vid,repairs,saveRepair,delRepair}) => {
   const tMat = filtered.reduce((s,r)=>s+parseFloat(r.matPrice||0),0);
   const tLab = filtered.reduce((s,r)=>s+parseFloat(r.laborPrice||0),0);
 
-  const openNew=()=>{setForm(ef);setEditId(null);setShowF(true);};
+  const veh = fueling.length===0 ? null : null; // placeholder
+  const getDefaultFuel = ()=>{
+    // try to match last used fuel for this vehicle
+    const last = [...fueling].filter(f=>f.vid===vid).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+    return last?.fuelType || "Natural 95";
+  };
+  const openNew=()=>{setForm({...ef,fuelType:getDefaultFuel()});setEditId(null);setShowF(true);};
   const openEdit=r=>{setForm({...r,matPrice:String(r.matPrice),laborPrice:String(r.laborPrice),km:String(r.km)});setEditId(r.id);setShowF(true);};
   const save=async()=>{
     const rec={...form,vid,id:editId||uid(),matPrice:parseFloat(form.matPrice)||0,laborPrice:parseFloat(form.laborPrice)||0,km:parseInt(form.km)||0};
@@ -432,7 +489,13 @@ const AddMod = ({vid,addons,saveAddon,delAddon}) => {
   const vd = addons.filter(a=>a.vid===vid).sort((a,b)=>new Date(b.date)-new Date(a.date));
   const total = vd.reduce((s,a)=>s+parseFloat(a.price||0),0);
 
-  const openNew=()=>{setForm(ef);setEditId(null);setShowF(true);};
+  const veh = fueling.length===0 ? null : null; // placeholder
+  const getDefaultFuel = ()=>{
+    // try to match last used fuel for this vehicle
+    const last = [...fueling].filter(f=>f.vid===vid).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+    return last?.fuelType || "Natural 95";
+  };
+  const openNew=()=>{setForm({...ef,fuelType:getDefaultFuel()});setEditId(null);setShowF(true);};
   const openEdit=a=>{setForm({...a,price:String(a.price),km:String(a.km)});setEditId(a.id);setShowF(true);};
   const save=async()=>{
     const rec={...form,vid,id:editId||uid(),price:parseFloat(form.price)||0,km:parseInt(form.km)||0};
