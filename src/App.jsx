@@ -686,8 +686,14 @@ export default function App() {
     // PWA install prompt
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
+      window._pwaPrompt = e;
       setPwaPrompt(e);
+      setShowPwaInstall(true);
     });
+    // Check if already installed
+    if(window.matchMedia('(display-mode: standalone)').matches){
+      window._pwaInstalled = true;
+    }
 
     // Service worker update notification
     if('serviceWorker' in navigator){
@@ -709,8 +715,7 @@ export default function App() {
         setTimeout(()=>setOfferBio(true), 800);
       }
     });
-    // Offer PWA install if prompt available
-    setTimeout(()=>{ if(window._pwaPrompt) setShowPwaInstall(true); }, 2000);
+    // PWA prompt handled by beforeinstallprompt event
   },[user?.id]);
 
   const loadAll = async ()=>{
@@ -886,6 +891,22 @@ export default function App() {
         </div>
       </div>
 
+      {/* PWA install hint on auth screen */}
+      {pwaPrompt&&ReactDOM.createPortal(
+        <div style={{position:"fixed",bottom:20,left:16,right:16,zIndex:9997,background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:16,padding:"14px 18px",display:"flex",alignItems:"center",gap:12,boxShadow:"0 8px 32px rgba(0,0,0,.5)"}}>
+          <span style={{fontSize:28}}>📲</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:500,marginBottom:2}}>Přidat AutoDeník na plochu</div>
+            <div style={{fontSize:11,color:"var(--t3)"}}>Rychlý přístup jako normální aplikace</div>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>setPwaPrompt(null)} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,padding:"7px 10px",color:"var(--t3)",fontSize:12,touchAction:"manipulation"}}>Ne</button>
+            <button onClick={async()=>{if(pwaPrompt){await pwaPrompt.prompt();}setPwaPrompt(null);}} style={{background:"var(--acc)",border:"none",borderRadius:8,padding:"7px 14px",color:"#0a0a0a",fontSize:12,fontWeight:600,touchAction:"manipulation"}}>Přidat</button>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Offer biometric registration after first login */}
       {offerBio&&ReactDOM.createPortal(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24,backdropFilter:"blur(10px)"}}>
@@ -915,18 +936,17 @@ export default function App() {
       <CSS/>
       <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",maxWidth:680,margin:"0 auto"}}>
 
-        {/* TOP BAR */}
-        <div style={{position:"sticky",top:0,zIndex:100,background:"rgba(10,10,10,.92)",borderBottom:"1px solid var(--b1)",padding:"14px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",backdropFilter:"blur(20px)"}}>
-          <div style={{fontSize:17,fontWeight:600,letterSpacing:".15em",color:"var(--t1)",textTransform:"uppercase"}}>AutoDeník</div>
-          <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            <button onClick={()=>setShowVDrawer(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 14px",color:"var(--t1)",fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,touchAction:"manipulation",letterSpacing:".01em"}}>
-              {av?<><span style={{width:6,height:6,borderRadius:"50%",background:av.color,display:"inline-block"}}></span> {av.brand} {av.model}</>:"Vozidlo"} <span style={{color:"var(--t3)",fontSize:10}}>▼</span>
-            </button>
-            <button onClick={()=>setShowExport(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 12px",color:"var(--t2)",fontSize:15,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",minWidth:36,minHeight:36}} title="Export dat">⬇</button>
-            {bioAvailable&&(
-              <button onClick={()=>setOfferBio(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 12px",color:bioStored?"var(--acc)":"var(--t3)",fontSize:16,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",minWidth:36,minHeight:36}} title={bioStored?"Otisk nastaven – klikni pro změnu":"Nastavit otisk prstu"}>👆</button>
-            )}
-            <button onClick={logout} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 12px",color:"var(--t2)",fontSize:13,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",minWidth:36,minHeight:36}} title="Odhlásit se"><span style={{fontSize:15}}>↩</span></button>
+                {/* TOP BAR */}
+        <div style={{position:"sticky",top:0,zIndex:100,background:"rgba(10,10,10,.92)",borderBottom:"1px solid var(--b1)",padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",backdropFilter:"blur(20px)",gap:8}}>
+          <div style={{fontSize:15,fontWeight:600,letterSpacing:".15em",color:"var(--t1)",textTransform:"uppercase",flexShrink:0}}>AutoDeník</div>
+          <button onClick={()=>setShowVDrawer(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 12px",color:"var(--t1)",fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:6,touchAction:"manipulation",flex:1,minWidth:0,maxWidth:240,overflow:"hidden"}}>
+            <span style={{width:6,height:6,borderRadius:"50%",background:av?.color||"var(--t3)",display:"inline-block",flexShrink:0}}></span>
+            <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,textAlign:"left"}}>{av?`${av.brand} ${av.model}`:"Vozidlo"}</span>
+            <span style={{color:"var(--t3)",fontSize:10,flexShrink:0}}>▼</span>
+          </button>
+          <div style={{display:"flex",gap:6,flexShrink:0}}>
+            <button onClick={()=>setShowExport(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,width:36,height:36,color:"var(--t2)",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}} title="Export">⬇</button>
+            <button onClick={logout} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,width:36,height:36,color:"var(--t2)",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}} title="Odhlásit">↩</button>
           </div>
         </div>
 
@@ -1060,7 +1080,7 @@ export default function App() {
           </div>
           <div style={{display:"flex",gap:8,flexShrink:0}}>
             <button onClick={()=>setPwaPrompt(null)} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 10px",color:"var(--t3)",fontSize:12,touchAction:"manipulation"}}>Ne</button>
-            <button onClick={async()=>{await pwaPrompt.prompt();setPwaPrompt(null);}} style={{background:"var(--acc)",border:"none",borderRadius:8,padding:"8px 14px",color:"#0a0a0a",fontSize:12,fontWeight:600,touchAction:"manipulation"}}>Přidat</button>
+            <button onClick={async()=>{if(pwaPrompt){await pwaPrompt.prompt();setPwaPrompt(null);}setShowPwaInstall(false);}} style={{background:"var(--acc)",border:"none",borderRadius:8,padding:"8px 14px",color:"#0a0a0a",fontSize:12,fontWeight:600,touchAction:"manipulation"}}>Přidat</button>
           </div>
         </div>,
         document.body
