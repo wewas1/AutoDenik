@@ -17,11 +17,11 @@ const supabase = createClient(SUPA_URL, SUPA_KEY, {
 const exportCSV = (rows, filename) => {
   if(!rows.length) return;
   const keys = Object.keys(rows[0]);
+  const nl = String.fromCharCode(10);
   const csv = [keys.join(";"), ...rows.map(r => keys.map(k => {
     const v = r[k] ?? "";
-    return typeof v === "string" && v.includes(";") ? `"${v}"` : v;
-  }).join(";"))].join("
-");
+    return typeof v === "string" && v.includes(";") ? ('"' + v + '"') : v;
+  }).join(";"))].join(nl);
   const blob = new Blob(["﻿"+csv], {type:"text/csv;charset=utf-8"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
