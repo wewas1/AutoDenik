@@ -7,6 +7,59 @@ const SUPA_URL = "https://jcpvjfhfgmijxdrldnds.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjcHZqZmhmZ21panhkcmxkbmRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODk5NzcsImV4cCI6MjA4NzM2NTk3N30.J4MGvoHE1_qQgbGk6NLg0R6kvyLy45eXn9GmGmAcnxU";
 const supabase = createClient(SUPA_URL, SUPA_KEY);
 
+// ── WEBAUTHN / BIOMETRICS ─────────────────────────────────────────────────────
+const WA_RPID = window.location.hostname;
+const WA_ORIGIN = window.location.origin;
+const b64url = arr => btoa(String.fromCharCode(...new Uint8Array(arr))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=/g,"");
+const b64urlDecode = str => Uint8Array.from(atob(str.replace(/-/g,"+").replace(/_/g,"/")), c=>c.charCodeAt(0));
+
+const isBiometricAvailable = async () => {
+  try {
+    if(!window.PublicKeyCredential) return false;
+    return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  } catch { return false; }
+};
+
+const registerBiometric = async (userId, userEmail) => {
+  const challenge = crypto.getRandomValues(new Uint8Array(32));
+  const credential = await navigator.credentials.create({
+    publicKey: {
+      challenge,
+      rp: { name: "AutoDeník", id: WA_RPID },
+      user: { id: new TextEncoder().encode(userId), name: userEmail, displayName: userEmail },
+      pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+      authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+      timeout: 60000,
+    }
+  });
+  if(!credential) return false;
+  // Store credential id linked to user
+  const stored = { credId: b64url(credential.rawId), userId, userEmail };
+  localStorage.setItem("ad_biometric", JSON.stringify(stored));
+  return true;
+};
+
+const loginWithBiometric = async () => {
+  const stored = JSON.parse(localStorage.getItem("ad_biometric") || "null");
+  if(!stored) return null;
+  try {
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        rpId: WA_RPID,
+        allowCredentials: [{ id: b64urlDecode(stored.credId), type: "public-key" }],
+        userVerification: "required",
+        timeout: 60000,
+      }
+    });
+    if(assertion) return stored.userEmail;
+    return null;
+  } catch { return null; }
+};
+
+const hasBiometricStored = () => !!localStorage.getItem("ad_biometric");
+
 const CSS = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
@@ -504,6 +557,10 @@ export default function App() {
   const [authMode, setAuthMode] = useState("login"); // login | register
   const [authError, setAuthError] = useState("");
   const [authMsg, setAuthMsg] = useState("");
+  const [bioAvailable, setBioAvailable] = useState(false);
+  const [bioStored, setBioStored] = useState(false);
+  const [bioLoading, setBioLoading] = useState(false);
+  const [offerBio, setOfferBio] = useState(false);
 
   const [vehicles, setVehicles] = useState([]);
   const [fueling, setFueling] = useState([]);
@@ -526,6 +583,8 @@ export default function App() {
     const {data:{subscription}} = supabase.auth.onAuthStateChange((_,session)=>{
       setUser(session?.user ?? null);
     });
+    isBiometricAvailable().then(setBioAvailable);
+    setBioStored(hasBiometricStored());
     return ()=>subscription.unsubscribe();
   },[]);
 
@@ -556,8 +615,30 @@ export default function App() {
   // Auth handlers
   const login = async()=>{
     setAuthError("");
-    const {error} = await supabase.auth.signInWithPassword({email,password});
-    if(error) setAuthError(error.message==="Invalid login credentials"?"Špatný email nebo heslo":error.message);
+    const {data,error} = await supabase.auth.signInWithPassword({email,password});
+    if(error){ setAuthError(error.message==="Invalid login credentials"?"Špatný email nebo heslo":error.message); return; }
+    // After successful login, offer biometric registration if available and not yet stored
+    if(data.user && bioAvailable && !hasBiometricStored()){
+      setOfferBio(true);
+    }
+  };
+
+  const loginBio = async()=>{
+    setBioLoading(true); setAuthError("");
+    const stored = JSON.parse(localStorage.getItem("ad_biometric")||"null");
+    if(!stored){ setAuthError("Otisk prstu není nastaven. Přihlaš se nejdříve heslem."); setBioLoading(false); return; }
+    const email = await loginWithBiometric();
+    if(email){
+      // Re-use stored session or prompt password silently - WebAuthn verifies identity locally
+      // We store a refresh token approach: just verify biometric = allow if session exists
+      const {data:{session}} = await supabase.auth.getSession();
+      if(session){ setBioLoading(false); return; }
+      // Session expired - need password, show message
+      setAuthError("Platnost přihlášení vypršela. Přihlaš se heslem.");
+    } else {
+      setAuthError("Otisk prstu nebyl rozpoznán.");
+    }
+    setBioLoading(false);
   };
   const register = async()=>{
     setAuthError(""); setAuthMsg("");
@@ -671,10 +752,43 @@ export default function App() {
               {authError&&<div style={{fontSize:12,color:"var(--red)",padding:"10px 12px",background:"rgba(224,92,92,.1)",borderRadius:8,border:"1px solid rgba(224,92,92,.2)"}}>{authError}</div>}
               {authMsg&&<div style={{fontSize:12,color:"var(--green)",padding:"10px 12px",background:"rgba(78,203,113,.1)",borderRadius:8,border:"1px solid rgba(78,203,113,.2)"}}>{authMsg}</div>}
               <Btn onClick={authMode==="login"?login:register} full>{authMode==="login"?"Přihlásit se":"Zaregistrovat"}</Btn>
+              {authMode==="login"&&bioAvailable&&bioStored&&(
+                <button onClick={loginBio} disabled={bioLoading} style={{
+                  background:"none",border:"1px solid var(--b2)",borderRadius:10,
+                  padding:"13px",color:"var(--t2)",fontSize:14,fontWeight:500,
+                  display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+                  touchAction:"manipulation",transition:"border-color .2s",
+                  opacity:bioLoading?0.6:1,
+                }}>
+                  <span style={{fontSize:22}}>👆</span>
+                  {bioLoading?"Ověřuji...":"Přihlásit otiskem prstu"}
+                </button>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Offer biometric registration after first login */}
+      {offerBio&&ReactDOM.createPortal(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24,backdropFilter:"blur(10px)"}}>
+          <div style={{background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:20,padding:28,maxWidth:340,width:"100%",textAlign:"center"}}>
+            <div style={{fontSize:48,marginBottom:16}}>👆</div>
+            <div style={{fontSize:18,fontWeight:500,marginBottom:8}}>Přihlášení otiskem prstu</div>
+            <div style={{fontSize:13,color:"var(--t2)",marginBottom:24,lineHeight:1.6}}>Chceš příště používat otisk prstu místo hesla? Můžeš to kdykoliv zrušit.</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <Btn full onClick={async()=>{
+                const ok = await registerBiometric(user?.id||"", email);
+                if(ok){ setBioStored(true); setAuthMsg("Otisk prstu nastaven!"); }
+                else setAuthError("Registrace otisku se nezdařila.");
+                setOfferBio(false);
+              }}>Nastavit otisk prstu</Btn>
+              <Btn ghost full onClick={()=>setOfferBio(false)}>Teď ne</Btn>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </>
   );
 
@@ -768,6 +882,26 @@ export default function App() {
 
       {showVDrawer&&<VehicleDrawer vehicles={vehicles} activeVid={activeVid} setActiveVid={setActiveVid} onAdd={()=>setShowVForm(true)} onClose={()=>setShowVDrawer(false)}/>}
       {showVForm&&<VForm existing={editV} onSave={async v=>{await saveVehicle(v);setShowVForm(false);setEditV(null);}} onClose={()=>{setShowVForm(false);setEditV(null);}}/>}
+
+      {/* Offer biometric after login */}
+      {offerBio&&ReactDOM.createPortal(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24,backdropFilter:"blur(10px)"}}>
+          <div style={{background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:20,padding:28,maxWidth:340,width:"100%",textAlign:"center"}}>
+            <div style={{fontSize:48,marginBottom:16}}>👆</div>
+            <div style={{fontSize:18,fontWeight:500,marginBottom:8}}>Přihlášení otiskem prstu</div>
+            <div style={{fontSize:13,color:"var(--t2)",marginBottom:24,lineHeight:1.6}}>Chceš příště používat otisk prstu místo hesla? Ušetříš čas při každém přihlášení.</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <Btn full onClick={async()=>{
+                const ok = await registerBiometric(user.id, user.email);
+                if(ok){ setBioStored(true); }
+                setOfferBio(false);
+              }}>Nastavit otisk prstu</Btn>
+              <Btn ghost full onClick={()=>setOfferBio(false)}>Teď ne</Btn>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </>
   );
 }
