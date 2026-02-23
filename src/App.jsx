@@ -569,7 +569,8 @@ export default function App() {
 
   // CRUD – Vehicles
   const saveVehicle = async(v)=>{
-    if(editV) {
+    const isEdit = v.id && vehicles.find(x=>x.id===v.id);
+    if(isEdit) {
       const {data} = await supabase.from("vehicles")
         .update({brand:v.brand,model:v.model,year:v.year,vin:v.vin,spz:v.spz,fuel:v.fuel,color:v.color,stk:v.stk||null,pov:v.pov||null})
         .eq("id",v.id).select().single();
@@ -690,7 +691,7 @@ export default function App() {
             <button onClick={()=>setShowVDrawer(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 14px",color:"var(--t1)",fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,touchAction:"manipulation",letterSpacing:".01em"}}>
               {av?<><span style={{width:6,height:6,borderRadius:"50%",background:av.color,display:"inline-block"}}></span> {av.brand} {av.model}</>:"Vozidlo"} <span style={{color:"var(--t3)",fontSize:10}}>▼</span>
             </button>
-            <button onClick={logout} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 12px",color:"var(--t2)",fontSize:13,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",minWidth:36,minHeight:36}} title="Odhlásit se">⏻</button>
+            <button onClick={logout} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 12px",color:"var(--t2)",fontSize:13,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",minWidth:36,minHeight:36}} title="Odhlásit se"><span style={{fontSize:15}}>↩</span></button>
           </div>
         </div>
 
