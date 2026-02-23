@@ -594,11 +594,18 @@ export default function App() {
     return ()=>subscription.unsubscribe();
   },[]);
 
-  // Load data when user logs in
+  // Load data when user logs in + offer biometric
   useEffect(()=>{
     if(!user) return;
     loadAll();
-  },[user]);
+    // Offer biometric setup if available and not yet configured
+    isBiometricAvailable().then(avail=>{
+      if(avail && !hasBiometricStored()){
+        // Small delay so main app renders first
+        setTimeout(()=>setOfferBio(true), 800);
+      }
+    });
+  },[user?.id]);
 
   const loadAll = async ()=>{
     setLoading(true);
@@ -808,6 +815,9 @@ export default function App() {
             <button onClick={()=>setShowVDrawer(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 14px",color:"var(--t1)",fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,touchAction:"manipulation",letterSpacing:".01em"}}>
               {av?<><span style={{width:6,height:6,borderRadius:"50%",background:av.color,display:"inline-block"}}></span> {av.brand} {av.model}</>:"Vozidlo"} <span style={{color:"var(--t3)",fontSize:10}}>▼</span>
             </button>
+            {bioAvailable&&(
+              <button onClick={()=>setOfferBio(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 12px",color:bioStored?"var(--acc)":"var(--t3)",fontSize:16,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",minWidth:36,minHeight:36}} title={bioStored?"Otisk nastaven – klikni pro změnu":"Nastavit otisk prstu"}>👆</button>
+            )}
             <button onClick={logout} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 12px",color:"var(--t2)",fontSize:13,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",minWidth:36,minHeight:36}} title="Odhlásit se"><span style={{fontSize:15}}>↩</span></button>
           </div>
         </div>
