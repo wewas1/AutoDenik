@@ -489,7 +489,7 @@ const VForm = ({existing,onSave,onClose}) => {
       </div>
       <div style={{display:"flex",gap:10,marginTop:22}}>
         <Btn ghost onClick={onClose} full>Zrušit</Btn>
-        <Btn onClick={()=>{onSave({...form,id:existing?.id||uid()});onClose();}} full>Uložit vozidlo</Btn>
+        <Btn onClick={()=>onSave({...form,id:existing?.id||uid()})} full>Uložit vozidlo</Btn>
       </div>
     </Modal>
   );
@@ -570,11 +570,15 @@ export default function App() {
   // CRUD – Vehicles
   const saveVehicle = async(v)=>{
     if(editV) {
-      await supabase.from("vehicles").update({brand:v.brand,model:v.model,year:v.year,vin:v.vin,spz:v.spz,fuel:v.fuel,color:v.color,stk:v.stk||null,pov:v.pov||null}).eq("id",v.id);
-      setVehicles(p=>p.map(x=>x.id===v.id?{...x,...v}:x));
+      const {data} = await supabase.from("vehicles")
+        .update({brand:v.brand,model:v.model,year:v.year,vin:v.vin,spz:v.spz,fuel:v.fuel,color:v.color,stk:v.stk||null,pov:v.pov||null})
+        .eq("id",v.id).select().single();
+      setVehicles(p=>p.map(x=>x.id===v.id?{...x,...v,...(data||{})}:x));
+      setActiveVid(v.id);
     } else {
-      const {data} = await supabase.from("vehicles").insert({...v,id:undefined,user_id:user.id}).select().single();
+      const {data,error} = await supabase.from("vehicles").insert({...v,id:undefined,user_id:user.id}).select().single();
       if(data){ setVehicles(p=>[...p,data]); setActiveVid(data.id); }
+      else console.error(error);
     }
   };
   const delVehicle = async(id)=>{
@@ -686,7 +690,7 @@ export default function App() {
             <button onClick={()=>setShowVDrawer(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 14px",color:"var(--t1)",fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,touchAction:"manipulation",letterSpacing:".01em"}}>
               {av?<><span style={{width:6,height:6,borderRadius:"50%",background:av.color,display:"inline-block"}}></span> {av.brand} {av.model}</>:"Vozidlo"} <span style={{color:"var(--t3)",fontSize:10}}>▼</span>
             </button>
-            <button onClick={logout} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 10px",color:"var(--t3)",fontSize:12,touchAction:"manipulation"}} title="Odhlásit">⏻</button>
+            <button onClick={logout} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 12px",color:"var(--t2)",fontSize:13,touchAction:"manipulation",display:"flex",alignItems:"center",justifyContent:"center",minWidth:36,minHeight:36}} title="Odhlásit se">⏻</button>
           </div>
         </div>
 
@@ -762,7 +766,7 @@ export default function App() {
       </div>
 
       {showVDrawer&&<VehicleDrawer vehicles={vehicles} activeVid={activeVid} setActiveVid={setActiveVid} onAdd={()=>setShowVForm(true)} onClose={()=>setShowVDrawer(false)}/>}
-      {showVForm&&<VForm existing={editV} onSave={v=>{saveVehicle(v);}} onClose={()=>{setShowVForm(false);setEditV(null);}}/>}
+      {showVForm&&<VForm existing={editV} onSave={async v=>{await saveVehicle(v);setShowVForm(false);setEditV(null);}} onClose={()=>{setShowVForm(false);setEditV(null);}}/>}
     </>
   );
 }
