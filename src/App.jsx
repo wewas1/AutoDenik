@@ -267,7 +267,7 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
     <div className="au">
       {/* Stats */}
       <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
-        <StatBox label="Průměrná spotřeba" val={avgCons?fmt(avgCons,1):"—"} unit={fueling.filter(f=>f.vid===vid&&f.fuelType?.startsWith("Elektřina")).length>fueling.filter(f=>f.vid===vid).length/2?"kWh/100km":"l/100km"} c="var(--acc)"/>
+        <StatBox label="Průměrná spotřeba" val={avgCons?fmt(avgCons,1):"—"} unit={fueling.filter(f=>f.vid===vid&&f.fuelType?.startsWith("Elektřina")).length>fueling.filter(f=>f.vid===vid).length/2?"kWh/100km":"L/100km"} c="var(--acc)"/>
         <StatBox label="Celková útrata" val={fmt(totalCost)} unit="Kč" c="var(--yellow)"/>
       </div>
       <StatBox label="Počet tankování" val={filtered.length} unit="záznamů" c="var(--blue)"/>
@@ -311,16 +311,16 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
               </div>
               <div style={{textAlign:"right"}}>
                 <div style={{fontSize:20,fontWeight:300,color:"var(--t1)",fontFamily:"var(--mono)",letterSpacing:"-.02em"}}>{fmt(f.total)}<span style={{fontSize:12,color:"var(--t3)",marginLeft:4}}>Kč</span></div>
-                <div style={{fontSize:11,color:"var(--t3)",marginTop:2,fontFamily:"var(--mono)"}}>{fmt(f.pricePerLiter,2)} {f.fuelType?.startsWith("Elektřina")?"Kč/kWh":"Kč/l"}</div>
+                <div style={{fontSize:11,color:"var(--t3)",marginTop:2,fontFamily:"var(--mono)"}}>{fmt(f.pricePerLiter,2)} {f.fuelType?.startsWith("Elektřina")?"Kč/kWh":"Kč/L"}</div>
               </div>
             </div>
             <div style={{height:"1px",background:"var(--b1)",marginBottom:12}}/>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                <Pill c="var(--t2)">{fmt(f.liters,1)} {f.fuelType?.startsWith("Elektřina")?"kWh":"l"}</Pill>
+                <Pill c="var(--t2)">{fmt(f.liters,1)} {f.fuelType?.startsWith("Elektřina")?"kWh":"L"}</Pill>
                 <Pill c="var(--t2)">{fmt(f.km)} km</Pill>
                 {f.driven&&<Pill c="var(--green)">↑ {fmt(f.driven)} km</Pill>}
-                {f.cons&&<Pill c="var(--acc)">{fmt(f.cons,1)} {f.fuelType?.startsWith("Elektřina")?"kWh/100":"l/100"}</Pill>}
+                {f.cons&&<Pill c="var(--acc)">{fmt(f.cons,1)} {f.fuelType?.startsWith("Elektřina")?"kWh/100km":"L/100km"}</Pill>}
               </div>
               <div style={{display:"flex",gap:6}}>
                 <IBtn onClick={()=>openEdit(f)}>✏️</IBtn>
@@ -648,6 +648,9 @@ export default function App() {
   const [bioStored, setBioStored] = useState(false);
   const [bioLoading, setBioLoading] = useState(false);
   const [offerBio, setOfferBio] = useState(false);
+  const [pwaPrompt, setPwaPrompt] = useState(null);
+  const [showPwaInstall, setShowPwaInstall] = useState(false);
+  const [showUpdate, setShowUpdate] = useState(false);
 
   const [vehicles, setVehicles] = useState([]);
   const [fueling, setFueling] = useState([]);
@@ -679,6 +682,20 @@ export default function App() {
     });
     isBiometricAvailable().then(setBioAvailable);
     setBioStored(hasBiometricStored());
+
+    // PWA install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setPwaPrompt(e);
+    });
+
+    // Service worker update notification
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.addEventListener('message', (e) => {
+        if(e.data?.type === 'UPDATE_AVAILABLE') setShowUpdate(true);
+      });
+    }
+
     return ()=>subscription.unsubscribe();
   },[]);
 
@@ -689,10 +706,11 @@ export default function App() {
     // Offer biometric setup if available and not yet configured
     isBiometricAvailable().then(avail=>{
       if(avail && !hasBiometricStored()){
-        // Small delay so main app renders first
         setTimeout(()=>setOfferBio(true), 800);
       }
     });
+    // Offer PWA install if prompt available
+    setTimeout(()=>{ if(window._pwaPrompt) setShowPwaInstall(true); }, 2000);
   },[user?.id]);
 
   const loadAll = async ()=>{
@@ -1013,6 +1031,36 @@ export default function App() {
                 <span style={{fontSize:20}}>💾</span> Kompletní záloha (.json)
               </button>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Update notification banner */}
+      {showUpdate&&ReactDOM.createPortal(
+        <div style={{position:"fixed",top:0,left:0,right:0,zIndex:9998,background:"linear-gradient(135deg,#1a1e2a,#222636)",borderBottom:"1px solid var(--acc)",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+          <div style={{fontSize:13,color:"var(--t1)"}}>🔄 Dostupná nová verze aplikace…</div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>window.location.reload()} style={{background:"var(--acc)",border:"none",borderRadius:8,padding:"7px 14px",color:"#0a0a0a",fontSize:12,fontWeight:600,touchAction:"manipulation"}}>Aktualizovat</button>
+            <button onClick={()=>setShowUpdate(false)} style={{background:"none",border:"1px solid var(--b2)",borderRadius:8,padding:"7px 10px",color:"var(--t3)",fontSize:12,touchAction:"manipulation"}}>Později</button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* PWA Install prompt */}
+      {pwaPrompt&&ReactDOM.createPortal(
+        <div style={{position:"fixed",bottom:80,left:16,right:16,zIndex:9997,background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:16,padding:"18px 20px",display:"flex",alignItems:"center",gap:14,boxShadow:"0 8px 40px rgba(0,0,0,.6)"}}>
+          <div style={{width:48,height:48,borderRadius:12,overflow:"hidden",flexShrink:0,background:"var(--s2)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <img src="/logo.svg" alt="AutoDeník" style={{width:40,height:40}}/>
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:14,fontWeight:600,marginBottom:2}}>Přidat na plochu</div>
+            <div style={{fontSize:11,color:"var(--t3)"}}>Rychlý přístup bez prohlížeče</div>
+          </div>
+          <div style={{display:"flex",gap:8,flexShrink:0}}>
+            <button onClick={()=>setPwaPrompt(null)} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 10px",color:"var(--t3)",fontSize:12,touchAction:"manipulation"}}>Ne</button>
+            <button onClick={async()=>{await pwaPrompt.prompt();setPwaPrompt(null);}} style={{background:"var(--acc)",border:"none",borderRadius:8,padding:"8px 14px",color:"#0a0a0a",fontSize:12,fontWeight:600,touchAction:"manipulation"}}>Přidat</button>
           </div>
         </div>,
         document.body
