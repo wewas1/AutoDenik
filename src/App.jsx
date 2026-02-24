@@ -285,7 +285,7 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 <Pill c="var(--t2)">{fmt(f.liters,1)} {f.fuelType?.startsWith("Elektřina")?"kWh":"L"}</Pill>
                 <Pill c="var(--t2)">{fmt(f.km)} km</Pill>
-                {f.driven&&<Pill c="var(--green)">↑ {fmt(f.driven)} km</Pill>}
+                {f.driven&&<Pill c="var(--t3)">+{fmt(f.driven)} km</Pill>}
                 {f.cons&&<Pill c="var(--acc)">{fmt(f.cons,1)} {f.fuelType?.startsWith("Elektřina")?"kWh/100km":"L/100km"}</Pill>}
               </div>
               <div style={{display:"flex",gap:6}}>
@@ -837,7 +837,7 @@ export default function App() {
                 {/* TOP BAR */}
         <div style={{position:"sticky",top:0,zIndex:100,background:theme==="dark"?"rgba(10,10,10,.92)":"rgba(242,240,235,.95)",borderBottom:"1px solid var(--b1)",padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",backdropFilter:"blur(20px)",gap:8}}>
           <div style={{fontSize:15,fontWeight:600,letterSpacing:".15em",color:"var(--t1)",textTransform:"uppercase",flexShrink:0}}>AutoDeník</div>
-          <button onClick={()=>setShowVDrawer(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 12px",color:"var(--t1)",fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:6,touchAction:"manipulation",flex:1,minWidth:0,maxWidth:240,overflow:"hidden"}}>
+          <button onClick={()=>setShowVDrawer(true)} style={{background:"var(--s2)",border:"1px solid var(--acc)",borderRadius:8,padding:"8px 12px",color:"var(--t1)",fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:6,touchAction:"manipulation",flex:1,minWidth:0,maxWidth:240,overflow:"hidden",boxShadow:"0 0 0 1px rgba(200,169,110,.15)"}}>
             <span style={{width:6,height:6,borderRadius:"50%",background:av?.color||"var(--t3)",display:"inline-block",flexShrink:0}}></span>
             <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,textAlign:"left"}}>{av?`${av.brand} ${av.model}`:"Vozidlo"}</span>
             <span style={{color:"var(--t3)",fontSize:10,flexShrink:0}}>▼</span>
