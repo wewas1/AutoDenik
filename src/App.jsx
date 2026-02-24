@@ -604,7 +604,6 @@ export default function App() {
       setUser(session?.user ?? null);
       // When user just signed in, offer biometric if available and not yet set
       if(event==="SIGNED_IN" && session?.user){
-        });
       }
     });
 
