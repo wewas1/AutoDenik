@@ -229,12 +229,17 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
               <div style={{fontSize:10,fontWeight:600,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:10}}>{label}</div>
               <ResponsiveContainer width="100%" height={130}>
                 <AreaChart data={data}>
-                  <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={color} stopOpacity={.25}/><stop offset="95%" stopColor={color} stopOpacity={0}/></linearGradient></defs>
+                  <defs>
+                    <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={color} stopOpacity={0.4}/>
+                      <stop offset="100%" stopColor={color} stopOpacity={0.05}/>
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/>
                   <XAxis dataKey="d" tick={{fill:"var(--t3)",fontSize:9}} tickLine={false}/>
                   <YAxis tick={{fill:"var(--t3)",fontSize:9}} tickLine={false} axisLine={false} domain={["auto","auto"]}/>
                   <Tooltip contentStyle={{background:"var(--s2)",border:"1.5px solid var(--b2)",borderRadius:8,color:"var(--t1)",fontSize:12}}/>
-                  <Area type="monotone" dataKey="v" stroke={color} strokeWidth={2} fill={`url(#grad_${label.replace(/[^a-z0-9]/gi,"_")})`} dot={{fill:color,r:3,strokeWidth:0}}/>
+                  <Area type="monotone" dataKey="v" stroke={color} strokeWidth={2} fill={`url(#${gid})`} dot={{fill:color,r:3,strokeWidth:0}}/>
                 </AreaChart>
               </ResponsiveContainer>
             </div>
