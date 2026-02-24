@@ -90,9 +90,10 @@ const CSS = () => (
       font-variant-numeric: normal;
     }
     input.vin-input {
-      font-family: var(--mono);
+      font-family: 'DM Sans', sans-serif;
       font-variant-numeric: normal;
-      letter-spacing: .08em;
+      font-feature-settings: "zero" 0;
+      letter-spacing: .1em;
       text-transform: uppercase;
     }
     input:focus, select:focus, textarea:focus {
@@ -139,6 +140,20 @@ const Btn = ({onClick,children,ghost,danger,full,sm}) => (
   }}>{children}</button>
 );
 
+const EditIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+);
+const TrashIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+    <path d="M10 11v6"/><path d="M14 11v6"/>
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+  </svg>
+);
 const IBtn = ({onClick,title,children,danger}) => (
   <button onClick={onClick} title={title} style={{
     background:"none",border:"1px solid var(--b1)",borderRadius:8,
@@ -296,8 +311,8 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
                 {f.cons&&<Pill c="var(--acc)">{fmt(f.cons,1)} {f.fuelType?.startsWith("Elektřina")?"kWh/100km":"L/100km"}</Pill>}
               </div>
               <div style={{display:"flex",gap:6}}>
-                <IBtn onClick={()=>openEdit(f)}>✏️</IBtn>
-                <IBtn onClick={()=>del(f.id)} danger>🗑</IBtn>
+                <IBtn onClick={()=>openEdit(f)}><EditIcon/></IBtn>
+                <IBtn onClick={()=>del(f.id)} danger><TrashIcon/></IBtn>
               </div>
             </div>
           </div>
@@ -433,8 +448,8 @@ const RepMod = ({vid,repairs,saveRepair,delRepair}) => {
               <div style={{fontSize:11,color:"var(--t3)",marginBottom:8}}>mat: {fmt(r.matPrice)} Kč · práce: {fmt(r.laborPrice)} Kč</div>
               {r.comment&&<div style={{fontSize:12,color:"var(--t3)",fontStyle:"italic",padding:"8px 10px",background:"var(--s3)",borderRadius:8,borderLeft:"3px solid var(--b2)",marginBottom:8}}>{r.comment}</div>}
               <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-                <IBtn onClick={()=>openEdit(r)}>✏️</IBtn>
-                <IBtn onClick={()=>del(r.id)} danger>🗑</IBtn>
+                <IBtn onClick={()=>openEdit(r)}><EditIcon/></IBtn>
+                <IBtn onClick={()=>del(r.id)} danger><TrashIcon/></IBtn>
               </div>
             </div>
           );
@@ -509,8 +524,8 @@ const AddMod = ({vid,addons,saveAddon,delAddon}) => {
             </div>
             {a.comment&&<div style={{fontSize:12,color:"var(--t3)",fontStyle:"italic",padding:"8px 10px",background:"var(--s3)",borderRadius:8,borderLeft:"3px solid var(--b2)",marginBottom:8}}>{a.comment}</div>}
             <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-              <IBtn onClick={()=>openEdit(a)}>✏️</IBtn>
-              <IBtn onClick={()=>del(a.id)} danger>🗑</IBtn>
+              <IBtn onClick={()=>openEdit(a)}><EditIcon/></IBtn>
+              <IBtn onClick={()=>del(a.id)} danger><TrashIcon/></IBtn>
             </div>
           </div>
         ))}
@@ -927,8 +942,8 @@ export default function App() {
                         </div>
                       </div>
                       <div style={{display:"flex",gap:8}}>
-                        <IBtn onClick={()=>{setEditV(av);setShowVForm(true);}}>✏️</IBtn>
-                        <IBtn onClick={()=>delVehicle(av.id)} danger>🗑</IBtn>
+                        <IBtn onClick={()=>{setEditV(av);setShowVForm(true);}}><EditIcon/></IBtn>
+                        <IBtn onClick={()=>delVehicle(av.id)} danger><TrashIcon/></IBtn>
                       </div>
                     </div>
                     {av.vin&&<div style={{fontSize:10,color:"var(--t2)",marginTop:14,fontFamily:"var(--mono)",letterSpacing:".05em"}}>VIN · {av.vin}</div>}
@@ -1012,7 +1027,8 @@ export default function App() {
       {/* Update notification banner - bottom */}
       {showUpdate&&ReactDOM.createPortal(
         <div style={{
-          position:"fixed",bottom:20,left:16,right:16,zIndex:9998,
+          position:"fixed",bottom:20,left:"50%",transform:"translateX(-50%)",
+          width:"calc(100% - 32px)",maxWidth:540,zIndex:9998,
           background:"var(--s1)",border:"1px solid var(--acc)",
           borderRadius:16,padding:"16px 18px",
           display:"flex",alignItems:"center",justifyContent:"space-between",
