@@ -42,7 +42,7 @@ const CSS = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
+    :root, [data-theme="dark"] {
       --bg:  #0a0a0a;
       --s1:  #111111;
       --s2:  #181818;
@@ -60,7 +60,25 @@ const CSS = () => (
       --font:'DM Sans', sans-serif;
       --mono:'DM Mono', monospace;
     }
-    html, body, #root { height:100%; background:var(--bg); color:var(--t1); font-family:var(--font); }
+    [data-theme="light"] {
+      --bg:  #f2f0eb;
+      --s1:  #ffffff;
+      --s2:  #f7f5f0;
+      --s3:  #ede9e2;
+      --b1:  #ddd9d0;
+      --b2:  #ccc8c0;
+      --acc: #b8924a;
+      --acc2:#c8a96e;
+      --blue:#3a6fd8;
+      --green:#2a9a50;
+      --red: #cc3333;
+      --t1:  #1a1a16;
+      --t2:  #666660;
+      --t3:  #999990;
+      --font:'DM Sans', sans-serif;
+      --mono:'DM Mono', monospace;
+    }
+    html, body, #root { height:100%; background:var(--bg); color:var(--t1); font-family:var(--font); transition: background .3s, color .3s; }
     * { scrollbar-width:thin; scrollbar-color:var(--b2) transparent; }
     ::-webkit-scrollbar { width:3px; }
     ::-webkit-scrollbar-thumb { background:var(--b2); border-radius:2px; }
@@ -235,9 +253,9 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
                       <stop offset="100%" stopColor={color} stopOpacity={0.05}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a"/>
-                  <XAxis dataKey="d" tick={{fill:"#666660",fontSize:9}} tickLine={false}/>
-                  <YAxis tick={{fill:"#666660",fontSize:9}} tickLine={false} axisLine={false} domain={["auto","auto"]}/>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/>
+                  <XAxis dataKey="d" tick={{fill:"var(--t3)",fontSize:9}} tickLine={false}/>
+                  <YAxis tick={{fill:"var(--t3)",fontSize:9}} tickLine={false} axisLine={false} domain={["auto","auto"]}/>
                   <Tooltip contentStyle={{background:"var(--s2)",border:"1.5px solid var(--b2)",borderRadius:8,color:"var(--t1)",fontSize:12}}/>
                   <Area type="monotone" dataKey="v" stroke={color} strokeWidth={2} fill={`url(#${gid})`} dot={{fill:color,r:3,strokeWidth:0}}/>
                 </AreaChart>
@@ -597,6 +615,12 @@ export default function App() {
   const [showVDrawer, setShowVDrawer] = useState(false);
   const [showVForm, setShowVForm] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [theme, setTheme] = useState(()=>localStorage.getItem("ad_theme")||"dark");
+
+  useEffect(()=>{
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("ad_theme", theme);
+  },[theme]);
   const [editV, setEditV] = useState(null);
 
   // Auth check on load
@@ -811,7 +835,7 @@ export default function App() {
       <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",maxWidth:680,margin:"0 auto"}}>
 
                 {/* TOP BAR */}
-        <div style={{position:"sticky",top:0,zIndex:100,background:"rgba(10,10,10,.92)",borderBottom:"1px solid var(--b1)",padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",backdropFilter:"blur(20px)",gap:8}}>
+        <div style={{position:"sticky",top:0,zIndex:100,background:theme==="dark"?"rgba(10,10,10,.92)":"rgba(242,240,235,.95)",borderBottom:"1px solid var(--b1)",padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",backdropFilter:"blur(20px)",gap:8}}>
           <div style={{fontSize:15,fontWeight:600,letterSpacing:".15em",color:"var(--t1)",textTransform:"uppercase",flexShrink:0}}>AutoDeník</div>
           <button onClick={()=>setShowVDrawer(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,padding:"8px 12px",color:"var(--t1)",fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:6,touchAction:"manipulation",flex:1,minWidth:0,maxWidth:240,overflow:"hidden"}}>
             <span style={{width:6,height:6,borderRadius:"50%",background:av?.color||"var(--t3)",display:"inline-block",flexShrink:0}}></span>
@@ -820,7 +844,19 @@ export default function App() {
           </button>
           <div style={{display:"flex",gap:6,flexShrink:0}}>
             <button onClick={()=>setShowExport(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,width:36,height:36,color:"var(--t2)",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}} title="Export">⬇</button>
-            <button onClick={logout} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,width:36,height:36,color:"var(--t2)",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}} title="Odhlásit">↩</button>
+            <button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}} title={theme==="dark"?"Světlý režim":"Tmavý režim"}>
+              {theme==="dark"
+                ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888880" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>
+                : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666660" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              }
+            </button>
+            <button onClick={logout} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}} title="Odhlásit">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="2" x2="12" y2="6" strokeWidth="2.5" stroke="var(--acc)"/>
+              </svg>
+            </button>
           </div>
         </div>
 
