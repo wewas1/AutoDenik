@@ -542,16 +542,18 @@ const VehicleDrawer = ({vehicles,activeVid,setActiveVid,onAdd,onClose}) => (
         {vehicles.map(v=>(
           <div key={v.id} onClick={()=>{setActiveVid(v.id);onClose();}} style={{
             background:activeVid===v.id?"var(--s2)":"none",
-            border:`1px solid ${activeVid===v.id?v.color+"60":"var(--b1)"}`,
+            border:`1px solid ${activeVid===v.id?"var(--acc)":"var(--b1)"}`,
             borderRadius:14,padding:"16px",cursor:"pointer",
             display:"flex",alignItems:"center",gap:14,position:"relative",overflow:"hidden",
           }}>
-            {activeVid===v.id&&<div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:v.color,borderRadius:"3px 0 0 3px"}}/>}
-            <div style={{width:44,height:44,borderRadius:10,background:v.color+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🚗</div>
+            {activeVid===v.id&&<div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:"var(--acc)",borderRadius:"3px 0 0 3px"}}/>}
+            <div style={{width:44,height:44,borderRadius:10,background:"var(--s3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h11l4 4h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-1"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+            </div>
             <div>
               <div style={{fontSize:10,color:"var(--t3)",letterSpacing:".1em",textTransform:"uppercase",marginBottom:3}}>{v.year} · {v.spz}</div>
               <div style={{fontWeight:500,fontSize:16,letterSpacing:"-.01em"}}>{v.brand} {v.model}</div>
-              <div style={{marginTop:5}}><Pill c={v.color}>{v.fuel}</Pill></div>
+              <div style={{marginTop:5}}><Pill c="var(--t3)">{v.fuel}</Pill></div>
             </div>
           </div>
         ))}
@@ -563,7 +565,7 @@ const VehicleDrawer = ({vehicles,activeVid,setActiveVid,onAdd,onClose}) => (
 
 // ── VEHICLE FORM ──────────────────────────────────────────────────────────────
 const VForm = ({existing,onSave,onClose}) => {
-  const colors = ["#4c8eff","#ff5c2e","#2eff9a","#ffd12e","#a855f7","#ec4899","#06b6d4"];
+  const colors = ["#888880","#aaa9a0","#666660","#c8a96e","#6b9fff","#4ecb71","#e05c5c"];
   const [form,setForm] = useState(existing||{brand:"",model:"",year:new Date().getFullYear(),vin:"",spz:"",fuel:"Benzín",color:colors[0],stk:"",pov:""});
   const s=(k,v)=>setForm(p=>({...p,[k]:v}));
   return (
@@ -579,7 +581,7 @@ const VForm = ({existing,onSave,onClose}) => {
         <FR label="Platnost POV" half><input type="date" value={form.pov||""} onChange={e=>s("pov",e.target.value)}/></FR>
         <FR label="Barva">
           <div style={{display:"flex",gap:8,flexWrap:"wrap",paddingTop:4}}>
-            {colors.map(c=><div key={c} onClick={()=>s("color",c)} style={{width:32,height:32,borderRadius:"50%",background:c,cursor:"pointer",border:form.color===c?"3px solid #fff":"3px solid transparent",boxShadow:form.color===c?`0 0 0 2px ${c}`:"none",transition:"all .15s",touchAction:"manipulation"}}/>)}
+            {colors.map(c=><div key={c} onClick={()=>s("color",c)} style={{width:30,height:30,borderRadius:8,background:c,cursor:"pointer",border:form.color===c?"2px solid var(--acc)":"2px solid transparent",opacity:form.color===c?1:0.6,transition:"all .15s",touchAction:"manipulation"}}/>)}
           </div>
         </FR>
       </div>
@@ -615,7 +617,7 @@ export default function App() {
   const [showVDrawer, setShowVDrawer] = useState(false);
   const [showVForm, setShowVForm] = useState(false);
   const [showExport, setShowExport] = useState(false);
-  const [theme, setTheme] = useState(()=>localStorage.getItem("ad_theme")||"dark");
+  const [theme, setTheme] = useState(()=>localStorage.getItem("ad_theme")||"light");
 
   useEffect(()=>{
     document.documentElement.setAttribute("data-theme", theme);
@@ -710,7 +712,8 @@ export default function App() {
       setVehicles(p=>p.map(x=>x.id===v.id?{...x,...v,...(data||{})}:x));
       setActiveVid(v.id);
     } else {
-      const {data,error} = await supabase.from("vehicles").insert({...v,id:undefined,user_id:user.id}).select().single();
+      const {brand,model,year,vin,spz,fuel,color,stk,pov} = v;
+      const {data,error} = await supabase.from("vehicles").insert({brand,model,year,vin,spz,fuel,color,stk:stk||null,pov:pov||null,user_id:user.id}).select().single();
       if(data){ setVehicles(p=>[...p,data]); setActiveVid(data.id); }
       else console.error(error);
     }
