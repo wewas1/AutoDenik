@@ -601,6 +601,46 @@ const VForm = ({existing,onSave,onClose}) => {
   );
 };
 
+// ── UPDATE TOAST ─────────────────────────────────────────────────────────────
+const UpdateToast = ({onDone}) => {
+  const [visible, setVisible] = useState(true);
+  const [progress, setProgress] = useState(100);
+  useEffect(()=>{
+    const duration = 4000;
+    const interval = 50;
+    const step = (interval/duration)*100;
+    const timer = setInterval(()=>{
+      setProgress(p=>{
+        if(p<=0){ clearInterval(timer); setVisible(false); setTimeout(onDone,300); return 0; }
+        return p-step;
+      });
+    }, interval);
+    return ()=>clearInterval(timer);
+  },[]);
+  return (
+    <div style={{
+      position:"fixed",bottom:20,left:"50%",transform:`translateX(-50%)`,
+      width:"calc(100% - 32px)",maxWidth:480,zIndex:9998,
+      background:"var(--s1)",border:"1px solid var(--b2)",
+      borderRadius:14,overflow:"hidden",
+      boxShadow:"0 4px 24px rgba(0,0,0,.25)",
+      opacity:visible?1:0,transition:"opacity .3s ease",
+    }}>
+      <div style={{padding:"14px 18px",display:"flex",alignItems:"center",gap:12}}>
+        <div style={{width:32,height:32,borderRadius:8,background:"var(--s2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>✓</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:13,fontWeight:500,color:"var(--t1)"}}>Aplikace aktualizována</div>
+          <div style={{fontSize:11,color:"var(--t3)",marginTop:1}}>Běžíš na nejnovější verzi</div>
+        </div>
+        <button onClick={()=>{setVisible(false);setTimeout(onDone,300);}} style={{background:"none",border:"none",color:"var(--t3)",fontSize:16,padding:4,touchAction:"manipulation",flexShrink:0}}>✕</button>
+      </div>
+      <div style={{height:2,background:"var(--b1)"}}>
+        <div style={{height:"100%",width:`${progress}%`,background:"var(--acc)",transition:"width .05s linear",borderRadius:2}}/>
+      </div>
+    </div>
+  );
+};
+
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null);
@@ -667,8 +707,7 @@ export default function App() {
       .then(r=>r.json())
       .then(({version})=>{
         const stored = localStorage.getItem('ad_version');
-        const dismissedThisSession = sessionStorage.getItem('ad_update_dismissed');
-        if(stored && stored !== version && !dismissedThisSession){
+        if(stored && stored !== version){
           setShowUpdate(true);
         }
         localStorage.setItem('ad_version', version);
@@ -933,7 +972,7 @@ export default function App() {
                         <IBtn onClick={()=>delVehicle(av.id)} danger>🗑</IBtn>
                       </div>
                     </div>
-                    {av.vin&&<div style={{fontSize:10,color:"var(--t2)",marginTop:14,fontFamily:"var(--mono)",letterSpacing:".05em"}}>VIN · {av.vin}</div>}
+                    {av.vin&&<div style={{fontSize:10,color:"var(--t2)",marginTop:14,fontFamily:"Arial, Helvetica, sans-serif",letterSpacing:".08em",fontVariantNumeric:"normal"}}>VIN · {av.vin}</div>}
                     <div style={{marginTop:14,paddingTop:14,borderTop:"1px solid var(--b1)",display:"flex",gap:10,flexWrap:"wrap"}}>
                       <div style={{flex:1,minWidth:120,background:"var(--s2)",borderRadius:10,padding:"10px 12px",border:`1px solid ${expColor(stkDays)}22`}}>
                         <div style={{fontSize:9,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:4}}>STK</div>
@@ -1011,27 +1050,9 @@ export default function App() {
         document.body
       )}
 
-      {/* Update notification banner - bottom */}
+      {/* Update notification - informational toast, auto-dismiss */}
       {showUpdate&&ReactDOM.createPortal(
-        <div style={{
-          position:"fixed",bottom:20,left:"50%",transform:"translateX(-50%)",
-          width:"calc(100% - 32px)",maxWidth:540,zIndex:9998,
-          background:"var(--s1)",border:"1px solid var(--acc)",
-          borderRadius:16,padding:"16px 18px",
-          display:"flex",alignItems:"center",justifyContent:"space-between",
-          gap:12,boxShadow:"0 8px 32px rgba(0,0,0,.4)",
-          backdropFilter:"blur(12px)",
-          animation:"up .3s ease"
-        }}>
-          <div>
-            <div style={{fontSize:13,fontWeight:500,color:"var(--t1)",marginBottom:2}}>🆕 Nová verze aplikace</div>
-            <div style={{fontSize:11,color:"var(--t3)"}}>Aktualizuj pro nejnovější funkce</div>
-          </div>
-          <div style={{display:"flex",gap:8,flexShrink:0}}>
-            <button onClick={()=>{sessionStorage.setItem("ad_update_dismissed","1");setShowUpdate(false);}} style={{background:"none",border:"1px solid var(--b2)",borderRadius:8,padding:"8px 12px",color:"var(--t3)",fontSize:12,touchAction:"manipulation"}}>Později</button>
-            <button onClick={()=>{window.location.reload(true);}} style={{background:"var(--acc)",border:"none",borderRadius:8,padding:"8px 14px",color:"#0a0a0a",fontSize:12,fontWeight:600,touchAction:"manipulation"}}>Aktualizovat</button>
-          </div>
-        </div>,
+        <UpdateToast onDone={()=>setShowUpdate(false)}/>,
         document.body
       )}
 
