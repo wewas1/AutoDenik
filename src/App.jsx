@@ -224,7 +224,7 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
       {/* Charts */}
       {filtered.length>1&&(
         <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:14}}>
-          {[{label:"Cena PHM (Kč/L)",data:chartP,color:"var(--yellow)",gid:"g1"},{label:"Spotřeba (L/100km)",data:chartC,color:"var(--acc)",gid:"g2"}].map(({label,data,color,gid})=>(
+          {[{label:"Cena PHM (Kč/L)",data:chartP,color:"#e8c060",gid:"g1"},{label:"Spotřeba (L/100km)",data:chartC,color:"#c8a96e",gid:"g2"}].map(({label,data,color,gid})=>(
             <div key={label} style={{background:"var(--s2)",border:"1.5px solid var(--b1)",borderRadius:12,padding:"14px 14px 8px"}}>
               <div style={{fontSize:10,fontWeight:600,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:10}}>{label}</div>
               <ResponsiveContainer width="100%" height={130}>
@@ -235,9 +235,9 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
                       <stop offset="100%" stopColor={color} stopOpacity={0.05}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/>
-                  <XAxis dataKey="d" tick={{fill:"var(--t3)",fontSize:9}} tickLine={false}/>
-                  <YAxis tick={{fill:"var(--t3)",fontSize:9}} tickLine={false} axisLine={false} domain={["auto","auto"]}/>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a"/>
+                  <XAxis dataKey="d" tick={{fill:"#666660",fontSize:9}} tickLine={false}/>
+                  <YAxis tick={{fill:"#666660",fontSize:9}} tickLine={false} axisLine={false} domain={["auto","auto"]}/>
                   <Tooltip contentStyle={{background:"var(--s2)",border:"1.5px solid var(--b2)",borderRadius:8,color:"var(--t1)",fontSize:12}}/>
                   <Area type="monotone" dataKey="v" stroke={color} strokeWidth={2} fill={`url(#${gid})`} dot={{fill:color,r:3,strokeWidth:0}}/>
                 </AreaChart>
