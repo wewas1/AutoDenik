@@ -634,8 +634,6 @@ export default function App() {
     if(!user) return;
     loadAll();
     // Offer biometric setup if available and not yet configured
-      }
-    });
     // PWA prompt handled by beforeinstallprompt event
   },[user?.id]);
 
