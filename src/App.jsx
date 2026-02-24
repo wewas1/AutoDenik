@@ -87,6 +87,13 @@ const CSS = () => (
       border-radius:10px; padding:13px 16px; font-family:var(--font);
       font-size:16px; width:100%; outline:none; transition:border-color .2s, box-shadow .2s;
       -webkit-appearance:none; appearance:none; letter-spacing:.01em;
+      font-variant-numeric: normal;
+    }
+    input.vin-input {
+      font-family: var(--mono);
+      font-variant-numeric: normal;
+      letter-spacing: .08em;
+      text-transform: uppercase;
     }
     input:focus, select:focus, textarea:focus {
       border-color:var(--acc);
@@ -575,7 +582,7 @@ const VForm = ({existing,onSave,onClose}) => {
         <FR label="Model" half><input value={form.model} onChange={e=>s("model",e.target.value)} placeholder="Octavia"/></FR>
         <FR label="Rok výroby" half><input type="number" inputMode="numeric" value={form.year} onChange={e=>s("year",e.target.value)}/></FR>
         <FR label="SPZ" half><input value={form.spz} onChange={e=>s("spz",e.target.value)} placeholder="1AB 2345"/></FR>
-        <FR label="VIN"><input value={form.vin} onChange={e=>s("vin",e.target.value)} placeholder="TMBZZZ1Z9K1234567"/></FR>
+        <FR label="VIN"><input className="vin-input" value={form.vin} onChange={e=>s("vin",e.target.value.toUpperCase())} placeholder="TMBZZZ1Z9K1234567"/></FR>
         <FR label="Palivo"><select value={form.fuel} onChange={e=>s("fuel",e.target.value)}>{["Benzín","Diesel","LPG","CNG","Hybrid","Elektro"].map(o=><option key={o}>{o}</option>)}</select></FR>
         <FR label="Platnost STK" half><input type="date" value={form.stk||""} onChange={e=>s("stk",e.target.value)}/></FR>
         <FR label="Platnost POV" half><input type="date" value={form.pov||""} onChange={e=>s("pov",e.target.value)}/></FR>
@@ -617,7 +624,12 @@ export default function App() {
   const [showVDrawer, setShowVDrawer] = useState(false);
   const [showVForm, setShowVForm] = useState(false);
   const [showExport, setShowExport] = useState(false);
-  const [theme, setTheme] = useState(()=>localStorage.getItem("ad_theme")||"light");
+  const [theme, setTheme] = useState(()=>{
+    const saved = localStorage.getItem("ad_theme");
+    if(saved) return saved;
+    // Use system preference
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
 
   useEffect(()=>{
     document.documentElement.setAttribute("data-theme", theme);
@@ -701,6 +713,21 @@ export default function App() {
     else setAuthMsg("Registrace úspěšná! Zkontroluj email a potvrď účet.");
   };
   const logout = async()=>{ await supabase.auth.signOut(); setVehicles([]); setFueling([]); setRepairs([]); setAddons([]); setActiveVid(null); };
+
+  const deleteAccount = async()=>{
+    if(!window.confirm("Smazat účet a VŠECHNA data? Tato akce je nevratná!")) return;
+    if(!window.confirm("Opravdu? Všechna vozidla, tankování, opravy a doplňky budou smazány navždy.")) return;
+    const uid = user.id;
+    // Delete all user data
+    await supabase.from("addons").delete().eq("user_id",uid);
+    await supabase.from("repairs").delete().eq("user_id",uid);
+    await supabase.from("fueling").delete().eq("user_id",uid);
+    await supabase.from("vehicles").delete().eq("user_id",uid);
+    // Delete account via admin - sign out first
+    await supabase.auth.signOut();
+    setVehicles([]); setFueling([]); setRepairs([]); setAddons([]); setActiveVid(null);
+    alert("Účet a data byly smazány. Pro úplné smazání účtu kontaktuj správce.");
+  };
 
   // CRUD – Vehicles
   const saveVehicle = async(v)=>{
@@ -961,6 +988,11 @@ export default function App() {
               <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",margin:"8px 0 4px"}}>JSON – kompletní záloha</div>
               <button onClick={()=>exportJSON({vehicles,fueling,repairs,addons,exportDate:new Date().toISOString()},"autodenik-zaloha.json")} style={{background:"var(--s2)",border:"1px solid var(--acc)",borderRadius:10,padding:"12px 16px",color:"var(--acc)",fontSize:14,fontWeight:500,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
                 <span style={{fontSize:20}}>💾</span> Kompletní záloha (.json)
+              </button>
+              <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--red)",textTransform:"uppercase",margin:"16px 0 4px"}}>Nebezpečná zóna</div>
+              <button onClick={()=>{setShowExport(false);deleteAccount();}} style={{background:"rgba(224,92,92,.08)",border:"1px solid rgba(224,92,92,.25)",borderRadius:10,padding:"12px 16px",color:"var(--red)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                Smazat účet a všechna data
               </button>
             </div>
           </div>
