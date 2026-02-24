@@ -657,16 +657,25 @@ export default function App() {
       setPwaPrompt(e);
       setShowPwaInstall(true);
     });
-    // Check if already installed
     if(window.matchMedia('(display-mode: standalone)').matches){
       window._pwaInstalled = true;
     }
 
-    // Service worker update notification
+    // Version check - fetch version.json a porovnej s uloženou verzí
+    fetch('/version.json?t='+Date.now())
+      .then(r=>r.json())
+      .then(({version})=>{
+        const stored = localStorage.getItem('ad_version');
+        if(stored && stored !== version){
+          setShowUpdate(true);
+        }
+        localStorage.setItem('ad_version', version);
+      })
+      .catch(()=>{});
+
+    // SW registration
     if('serviceWorker' in navigator){
-      navigator.serviceWorker.addEventListener('message', (e) => {
-        if(e.data?.type === 'UPDATE_AVAILABLE') setShowUpdate(true);
-      });
+      navigator.serviceWorker.register('/sw.js').catch(()=>{});
     }
 
     return ()=>subscription.unsubscribe();
@@ -1000,13 +1009,24 @@ export default function App() {
         document.body
       )}
 
-      {/* Update notification banner */}
+      {/* Update notification banner - bottom */}
       {showUpdate&&ReactDOM.createPortal(
-        <div style={{position:"fixed",top:0,left:0,right:0,zIndex:9998,background:"linear-gradient(135deg,#1a1e2a,#222636)",borderBottom:"1px solid var(--acc)",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-          <div style={{fontSize:13,color:"var(--t1)"}}>🔄 Dostupná nová verze aplikace…</div>
-          <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>window.location.reload()} style={{background:"var(--acc)",border:"none",borderRadius:8,padding:"7px 14px",color:"#0a0a0a",fontSize:12,fontWeight:600,touchAction:"manipulation"}}>Aktualizovat</button>
-            <button onClick={()=>setShowUpdate(false)} style={{background:"none",border:"1px solid var(--b2)",borderRadius:8,padding:"7px 10px",color:"var(--t3)",fontSize:12,touchAction:"manipulation"}}>Později</button>
+        <div style={{
+          position:"fixed",bottom:20,left:16,right:16,zIndex:9998,
+          background:"var(--s1)",border:"1px solid var(--acc)",
+          borderRadius:16,padding:"16px 18px",
+          display:"flex",alignItems:"center",justifyContent:"space-between",
+          gap:12,boxShadow:"0 8px 32px rgba(0,0,0,.4)",
+          backdropFilter:"blur(12px)",
+          animation:"up .3s ease"
+        }}>
+          <div>
+            <div style={{fontSize:13,fontWeight:500,color:"var(--t1)",marginBottom:2}}>🆕 Nová verze aplikace</div>
+            <div style={{fontSize:11,color:"var(--t3)"}}>Aktualizuj pro nejnovější funkce</div>
+          </div>
+          <div style={{display:"flex",gap:8,flexShrink:0}}>
+            <button onClick={()=>setShowUpdate(false)} style={{background:"none",border:"1px solid var(--b2)",borderRadius:8,padding:"8px 12px",color:"var(--t3)",fontSize:12,touchAction:"manipulation"}}>Později</button>
+            <button onClick={()=>{window.location.reload(true);}} style={{background:"var(--acc)",border:"none",borderRadius:8,padding:"8px 14px",color:"#0a0a0a",fontSize:12,fontWeight:600,touchAction:"manipulation"}}>Aktualizovat</button>
           </div>
         </div>,
         document.body
