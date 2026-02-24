@@ -56,7 +56,7 @@ const CSS = () => (
       --red: #e05c5c;
       --t1:  #f5f5f0;
       --t2:  #888880;
-      --t3:  #444440;
+      --t3:  #666660;
       --font:'DM Sans', sans-serif;
       --mono:'DM Mono', monospace;
     }
@@ -224,17 +224,17 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
       {/* Charts */}
       {filtered.length>1&&(
         <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:14}}>
-          {[{label:"Cena PHM (Kč/l)",data:chartP,color:"var(--yellow)"},{label:"Spotřeba (l/100km)",data:chartC,color:"var(--acc)"}].map(({label,data,color})=>(
+          {[{label:"Cena PHM (Kč/L)",data:chartP,color:"var(--yellow)",gid:"g1"},{label:"Spotřeba (L/100km)",data:chartC,color:"var(--acc)",gid:"g2"}].map(({label,data,color,gid})=>(
             <div key={label} style={{background:"var(--s2)",border:"1.5px solid var(--b1)",borderRadius:12,padding:"14px 14px 8px"}}>
               <div style={{fontSize:10,fontWeight:600,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:10}}>{label}</div>
               <ResponsiveContainer width="100%" height={130}>
                 <AreaChart data={data}>
-                  <defs><linearGradient id={`g${label}`} x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={color} stopOpacity={.25}/><stop offset="95%" stopColor={color} stopOpacity={0}/></linearGradient></defs>
+                  <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={color} stopOpacity={.25}/><stop offset="95%" stopColor={color} stopOpacity={0}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/>
                   <XAxis dataKey="d" tick={{fill:"var(--t3)",fontSize:9}} tickLine={false}/>
                   <YAxis tick={{fill:"var(--t3)",fontSize:9}} tickLine={false} axisLine={false} domain={["auto","auto"]}/>
                   <Tooltip contentStyle={{background:"var(--s2)",border:"1.5px solid var(--b2)",borderRadius:8,color:"var(--t1)",fontSize:12}}/>
-                  <Area type="monotone" dataKey="v" stroke={color} strokeWidth={2} fill={`url(#g${label})`} dot={{fill:color,r:3,strokeWidth:0}}/>
+                  <Area type="monotone" dataKey="v" stroke={color} strokeWidth={2} fill={`url(#grad_${label.replace(/[^a-z0-9]/gi,"_")})`} dot={{fill:color,r:3,strokeWidth:0}}/>
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -841,7 +841,7 @@ export default function App() {
                     <div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at top left, ${av.color}08, transparent 60%)`}}/>
                     <div style={{position:"relative",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
                       <div>
-                        <div style={{fontSize:11,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:6}}>{av.year} · {av.spz}</div>
+                        <div style={{fontSize:11,fontWeight:500,letterSpacing:".12em",color:"var(--t2)",textTransform:"uppercase",marginBottom:6}}>{av.year} · {av.spz}</div>
                         <div style={{fontSize:24,fontWeight:300,letterSpacing:"-.02em",color:"var(--t1)"}}>{av.brand} <strong style={{fontWeight:600}}>{av.model}</strong></div>
                         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:10}}>
                           <Pill c={av.color}>{av.fuel}</Pill>
@@ -852,7 +852,7 @@ export default function App() {
                         <IBtn onClick={()=>delVehicle(av.id)} danger>🗑</IBtn>
                       </div>
                     </div>
-                    {av.vin&&<div style={{fontSize:10,color:"var(--t3)",marginTop:14,fontFamily:"var(--mono)",letterSpacing:".05em"}}>VIN · {av.vin}</div>}
+                    {av.vin&&<div style={{fontSize:10,color:"var(--t2)",marginTop:14,fontFamily:"var(--mono)",letterSpacing:".05em"}}>VIN · {av.vin}</div>}
                     <div style={{marginTop:14,paddingTop:14,borderTop:"1px solid var(--b1)",display:"flex",gap:10,flexWrap:"wrap"}}>
                       <div style={{flex:1,minWidth:120,background:"var(--s2)",borderRadius:10,padding:"10px 12px",border:`1px solid ${expColor(stkDays)}22`}}>
                         <div style={{fontSize:9,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:4}}>STK</div>
