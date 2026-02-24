@@ -851,10 +851,9 @@ export default function App() {
               }
             </button>
             <button onClick={logout} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:8,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}} title="Odhlásit">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="2" x2="12" y2="6" strokeWidth="2.5" stroke="var(--acc)"/>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6.5 6.5 A8 8 0 1 0 17.5 6.5" stroke="var(--t2)" strokeWidth="2.2" fill="none"/>
+                <line x1="12" y1="2" x2="12" y2="13" stroke="var(--acc)" strokeWidth="2.4"/>
               </svg>
             </button>
           </div>
