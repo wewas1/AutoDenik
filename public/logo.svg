@@ -2,33 +2,78 @@
   <!-- Background -->
   <rect width="512" height="512" fill="#0a0a0a" rx="114"/>
   
-  <!-- Gold square accent top-left -->
-  <rect x="52" y="52" width="8" height="8" fill="#c8a96e" rx="2" opacity="0.6"/>
-  <rect x="452" y="452" width="8" height="8" fill="#c8a96e" rx="2" opacity="0.6"/>
+  <!-- Car silhouette - clean, minimal, elegant -->
+  <!-- Shadow/ground line -->
+  <ellipse cx="256" cy="358" rx="175" ry="8" fill="#c8a96e" opacity="0.08"/>
+  
+  <!-- Car body - smooth sedan profile -->
+  <path d="
+    M 82 295
+    L 82 272
+    Q 82 262 92 258
+    L 148 248
+    Q 162 218 185 205
+    Q 205 194 256 192
+    Q 307 192 327 205
+    Q 350 218 364 248
+    L 420 258
+    Q 430 262 430 272
+    L 430 295
+    Q 430 305 420 307
+    L 388 309
+    Q 382 292 362 286
+    Q 340 280 320 289
+    Q 304 297 302 312
+    L 210 312
+    Q 208 296 188 288
+    Q 166 280 148 290
+    Q 134 298 132 312
+    L 92 309
+    Q 82 307 82 295 Z
+  " fill="#c8a96e" opacity="0.9"/>
 
-  <!-- Main AD monogram - bold, clean -->
-  <text 
-    x="256" y="310" 
-    font-family="Georgia, 'Times New Roman', serif" 
-    font-size="210" 
-    font-weight="700"
-    fill="#c8a96e"
-    text-anchor="middle"
-    letter-spacing="-8"
-  >AD</text>
+  <!-- Roof -->
+  <path d="
+    M 175 248
+    Q 192 210 220 200
+    Q 238 194 256 193
+    Q 278 193 296 200
+    Q 322 210 337 248
+    Z
+  " fill="#c8a96e" opacity="0.7"/>
 
-  <!-- Thin horizontal line under text -->
-  <rect x="120" y="338" width="272" height="1.5" fill="#c8a96e" opacity="0.35" rx="1"/>
+  <!-- Windshield front -->
+  <path d="
+    M 300 248 Q 322 210 337 248 Z
+  " fill="#0a0a0a" opacity="0.3"/>
 
-  <!-- Subtitle -->
-  <text 
-    x="256" y="390" 
-    font-family="Georgia, serif" 
-    font-size="26" 
-    font-weight="400"
-    fill="#c8a96e"
-    text-anchor="middle"
-    letter-spacing="12"
-    opacity="0.7"
-  >DENÍK</text>
+  <!-- Windshield rear -->
+  <path d="
+    M 175 248 Q 192 210 215 248 Z
+  " fill="#0a0a0a" opacity="0.3"/>
+
+  <!-- Window strip -->
+  <path d="M 218 247 L 294 247 L 294 210 Q 278 197 256 196 Q 234 196 218 210 Z" 
+    fill="#0a0a0a" opacity="0.25"/>
+
+  <!-- Front wheel -->
+  <circle cx="168" cy="309" r="33" fill="#0a0a0a" stroke="#c8a96e" stroke-width="2.5" opacity="0.95"/>
+  <circle cx="168" cy="309" r="18" fill="none" stroke="#c8a96e" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="168" cy="309" r="5" fill="#c8a96e" opacity="0.7"/>
+
+  <!-- Rear wheel -->
+  <circle cx="344" cy="309" r="33" fill="#0a0a0a" stroke="#c8a96e" stroke-width="2.5" opacity="0.95"/>
+  <circle cx="344" cy="309" r="18" fill="none" stroke="#c8a96e" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="344" cy="309" r="5" fill="#c8a96e" opacity="0.7"/>
+
+  <!-- Headlight -->
+  <rect x="84" y="272" width="14" height="8" rx="4" fill="#c8a96e" opacity="0.8"/>
+  <!-- Taillight -->
+  <rect x="414" y="272" width="14" height="8" rx="4" fill="#c8a96e" opacity="0.5"/>
+
+  <!-- Door line -->
+  <line x1="256" y1="200" x2="256" y2="248" stroke="#0a0a0a" stroke-width="1" opacity="0.3"/>
+
+  <!-- Thin gold line accent bottom -->
+  <rect x="130" y="350" width="252" height="1" fill="#c8a96e" opacity="0.2" rx="1"/>
 </svg>
