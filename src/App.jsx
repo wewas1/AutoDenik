@@ -248,12 +248,7 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
     }
     setForm(u);
   };
-  const getDefaultFuel = ()=>{
-    // try to match last used fuel for this vehicle
-    const last = [...fueling].filter(f=>f.vid===vid).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
-    return last?.fuelType || "Natural 95";
-  };
-  const openNew=()=>{setForm({...ef,fuelType:getDefaultFuel()});setEditId(null);setShowF(true);};
+  const openNew=()=>{setForm(ef);setEditId(null);setShowF(true);};
   const openEdit=f=>{setForm({...f,liters:String(f.liters),pricePerLiter:String(f.pricePerLiter),km:String(f.km)});setEditId(f.id);setShowF(true);};
   const save=async()=>{
     const total=parseFloat(form.liters)*parseFloat(form.pricePerLiter);
@@ -419,12 +414,7 @@ const RepMod = ({vid,repairs,saveRepair,delRepair}) => {
   const tMat = filtered.reduce((s,r)=>s+parseFloat(r.matPrice||0),0);
   const tLab = filtered.reduce((s,r)=>s+parseFloat(r.laborPrice||0),0);
 
-  const getDefaultFuel = ()=>{
-    // try to match last used fuel for this vehicle
-    const last = [...fueling].filter(f=>f.vid===vid).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
-    return last?.fuelType || "Natural 95";
-  };
-  const openNew=()=>{setForm({...ef,fuelType:getDefaultFuel()});setEditId(null);setShowF(true);};
+  const openNew=()=>{setForm(ef);setEditId(null);setShowF(true);};
   const openEdit=r=>{setForm({...r,matPrice:String(r.matPrice),laborPrice:String(r.laborPrice),km:String(r.km)});setEditId(r.id);setShowF(true);};
   const save=async()=>{
     const rec={...form,vid,id:editId||uid(),matPrice:parseFloat(form.matPrice)||0,laborPrice:parseFloat(form.laborPrice)||0,km:parseInt(form.km)||0};
@@ -508,12 +498,7 @@ const AddMod = ({vid,addons,saveAddon,delAddon}) => {
   const vd = addons.filter(a=>a.vid===vid).sort((a,b)=>new Date(b.date)-new Date(a.date));
   const total = vd.reduce((s,a)=>s+parseFloat(a.price||0),0);
 
-  const getDefaultFuel = ()=>{
-    // try to match last used fuel for this vehicle
-    const last = [...fueling].filter(f=>f.vid===vid).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
-    return last?.fuelType || "Natural 95";
-  };
-  const openNew=()=>{setForm({...ef,fuelType:getDefaultFuel()});setEditId(null);setShowF(true);};
+  const openNew=()=>{setForm(ef);setEditId(null);setShowF(true);};
   const openEdit=a=>{setForm({...a,price:String(a.price),km:String(a.km)});setEditId(a.id);setShowF(true);};
   const save=async()=>{
     const rec={...form,vid,id:editId||uid(),price:parseFloat(form.price)||0,km:parseInt(form.km)||0};
@@ -741,6 +726,7 @@ export default function App() {
     setAuthError("");
     const {data,error} = await supabase.auth.signInWithPassword({email,password});
     if(error){ setAuthError(error.message==="Invalid login credentials"?"Špatný email nebo heslo":error.message); return; }
+    if(data?.session?.refresh_token) localStorage.setItem("ad_refresh", data.session.refresh_token);
     // offerBio is handled by onAuthStateChange
   };
 
@@ -748,14 +734,24 @@ export default function App() {
     setBioLoading(true); setAuthError("");
     const stored = JSON.parse(localStorage.getItem("ad_biometric")||"null");
     if(!stored){ setAuthError("Otisk prstu není nastaven. Přihlaš se nejdříve heslem."); setBioLoading(false); return; }
-    const email = await loginWithBiometric();
-    if(email){
-      // Re-use stored session or prompt password silently - WebAuthn verifies identity locally
-      // We store a refresh token approach: just verify biometric = allow if session exists
+    const verifiedEmail = await loginWithBiometric();
+    if(verifiedEmail){
+      // Try existing session first
       const {data:{session}} = await supabase.auth.getSession();
       if(session){ setBioLoading(false); return; }
-      // Session expired - need password, show message
-      setAuthError("Platnost přihlášení vypršela. Přihlaš se heslem.");
+      // Session expired - try refresh token stored locally
+      const savedRefresh = localStorage.getItem("ad_refresh");
+      if(savedRefresh){
+        const {data,error} = await supabase.auth.refreshSession({refresh_token: savedRefresh});
+        if(data?.session){ 
+          localStorage.setItem("ad_refresh", data.session.refresh_token);
+          setBioLoading(false); 
+          return; 
+        }
+      }
+      // Truly expired - need password
+      setAuthError("Platnost přihlášení vypršela. Přihlaš se heslem znovu pro obnovení otisku.");
+      localStorage.removeItem("ad_refresh");
     } else {
       setAuthError("Otisk prstu nebyl rozpoznán.");
     }
