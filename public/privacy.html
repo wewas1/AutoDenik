@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Zásady ochrany dat – AutoDeník</title>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0a0a;
+      color: #f5f5f0;
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+    header {
+      background: rgba(10,10,10,.95);
+      border-bottom: 1px solid #2a2a2a;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(20px);
+    }
+    header img { width: 34px; height: 34px; border-radius: 8px; }
+    header span { font-size: 14px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #c8a96e; }
+    header a { margin-left: auto; font-size: 13px; color: #888880; text-decoration: none; padding: 7px 14px; border: 1px solid #2a2a2a; border-radius: 8px; }
+    header a:hover { color: #f5f5f0; border-color: #444; }
+
+    .wrap { max-width: 640px; margin: 0 auto; padding: 40px 20px; }
+
+    h1 { font-size: 26px; font-weight: 600; margin-bottom: 6px; }
+    .subtitle { font-size: 13px; color: #666660; margin-bottom: 40px; letter-spacing: .02em; }
+
+    section { margin-bottom: 36px; }
+    h2 {
+      font-size: 11px; font-weight: 600; letter-spacing: .14em;
+      text-transform: uppercase; color: #c8a96e;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    p { font-size: 14px; line-height: 1.7; color: #aaa9a0; margin-bottom: 10px; }
+    ul { padding-left: 18px; margin-bottom: 10px; }
+    ul li { font-size: 14px; line-height: 1.7; color: #aaa9a0; margin-bottom: 4px; }
+
+    .card {
+      background: #111111;
+      border: 1px solid #2a2a2a;
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-top: 10px;
+    }
+    .card p { margin: 0; }
+
+    .contact-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 11px 20px;
+      background: none;
+      border: 1px solid #c8a96e;
+      border-radius: 10px;
+      color: #c8a96e;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background .2s;
+    }
+    .contact-btn:hover { background: rgba(200,169,110,.08); }
+
+    .badge {
+      display: inline-block;
+      background: rgba(200,169,110,.1);
+      border: 1px solid rgba(200,169,110,.25);
+      color: #c8a96e;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+
+    footer {
+      margin-top: 60px;
+      padding-top: 24px;
+      border-top: 1px solid #1a1a1a;
+      font-size: 12px;
+      color: #444440;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="/logo.svg" alt="AutoDeník"/>
+  <span>AutoDeník</span>
+  <a href="/">← Zpět do aplikace</a>
+</header>
+
+<div class="wrap">
+  <h1>Zásady ochrany osobních údajů</h1>
+  <p class="subtitle">Platné od 25. 2. 2026 &nbsp;·&nbsp; Aplikace AutoDeník</p>
+
+  <section>
+    <h2>Správce aplikace</h2>
+    <div class="card">
+      <p>Aplikace AutoDeník je provozována soukromou osobou jako neveřejná webová aplikace určená pro uzavřený okruh uživatelů. Správce dat není veřejně identifikován. Pro veškerý kontakt použijte níže uvedenou adresu.</p>
+      <a class="contact-btn" href="mailto:autodenik@seznam.cz">
+        ✉ autodenik@seznam.cz
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Jaké údaje zpracováváme</h2>
+    <div class="card">
+      <p>Aplikace ukládá pouze údaje, které sami zadáte:</p>
+      <ul>
+        <li>E-mailová adresa (pro přihlášení)</li>
+        <li>Údaje o vozidle – značka, model, rok, SPZ, VIN</li>
+        <li>Záznamy o tankování – datum, místo, palivo, množství, cena, stav km</li>
+        <li>Záznamy o opravách a doplňcích vozidla</li>
+      </ul>
+      <p>Aplikace <strong>nesleduje</strong> vaši polohu, nepoužívá analytické nástroje ani reklamní systémy.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Kde jsou data uložena</h2>
+    <div class="card">
+      <p>Veškerá data jsou uložena ve službě <strong>Supabase</strong> na serverech v Evropské unii. Supabase splňuje požadavky GDPR.</p>
+      <p style="margin-top:10px">
+        <span class="badge">EU servery</span>
+        <span class="badge">GDPR</span>
+        <span class="badge">Šifrované připojení (HTTPS)</span>
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Jak dlouho data uchováváme</h2>
+    <div class="card">
+      <p>Data jsou uchovávána po dobu, po kterou máte aktivní účet v aplikaci. Nejsme schopni předem stanovit pevnou dobu uchování – záleží výhradně na vás.</p>
+      <p style="margin-top:8px">Svůj účet a veškerá data můžete kdykoliv <strong>sami smazat</strong> přímo v aplikaci v sekci <em>Záloha → Smazat účet a všechna data</em>. Smazání je nevratné.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Vaše práva</h2>
+    <div class="card">
+      <ul>
+        <li><strong>Přístup k datům</strong> – veškerá vaše data vidíte přímo v aplikaci</li>
+        <li><strong>Export dat</strong> – stáhnete je ve formátu CSV nebo JSON (sekce Záloha)</li>
+        <li><strong>Smazání</strong> – účet i data smažete sami v aplikaci</li>
+        <li><strong>Dotazy</strong> – napište na <a href="mailto:autodenik@seznam.cz" style="color:#c8a96e">autodenik@seznam.cz</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Cookies a lokální úložiště</h2>
+    <div class="card">
+      <p>Aplikace nepoužívá sledovací cookies. Využívá pouze technicky nezbytné lokální úložiště prohlížeče pro:</p>
+      <ul>
+        <li>Udržení přihlášení (session token)</li>
+        <li>Zapamatování zvoleného tématu (světlý/tmavý režim)</li>
+        <li>Zapamatování naposledy zvoleného paliva</li>
+        <li>Kontrolu verze aplikace</li>
+      </ul>
+      <p style="margin-top:8px">Tato data nevycházejí z vašeho zařízení a nevyžadují váš souhlas.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Kontakt</h2>
+    <div class="card">
+      <p>V případě dotazů týkajících se vašich osobních údajů nás kontaktujte:</p>
+      <a class="contact-btn" href="mailto:autodenik@seznam.cz">
+        ✉ autodenik@seznam.cz
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    AutoDeník &nbsp;·&nbsp; Zásady ochrany osobních údajů &nbsp;·&nbsp; Verze 1.0 &nbsp;·&nbsp; 2026
+  </footer>
+</div>
+
+</body>
+</html>
