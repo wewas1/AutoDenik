@@ -223,7 +223,8 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
   const openEdit=f=>{setForm({...f,liters:String(f.liters),pricePerLiter:String(f.pricePerLiter),km:String(f.km)});setEditId(f.id);setShowF(true);};
   const save=async()=>{
     const total=parseFloat(form.liters)*parseFloat(form.pricePerLiter);
-    const rec={...form,vid,id:editId||uid(),liters:parseFloat(form.liters),pricePerLiter:parseFloat(form.pricePerLiter),total:isNaN(total)?parseFloat(form.total)||0:total,km:parseInt(form.km)};
+    const fuelType = form.fuelType==="__custom__" ? (form.customFuel||"Jiné") : form.fuelType;
+    const rec={...form,fuelType,vid,id:editId||uid(),liters:parseFloat(form.liters),pricePerLiter:parseFloat(form.pricePerLiter),total:isNaN(total)?parseFloat(form.total)||0:total,km:parseInt(form.km)};
     await saveFuel(rec, editId||null);
     setShowF(false);
   };
@@ -281,8 +282,8 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
                 <div style={{fontSize:12,color:"var(--t3)",marginTop:3}}>{f.fuelType}</div>
               </div>
               <div style={{textAlign:"right"}}>
-                <div style={{fontSize:20,fontWeight:300,color:"var(--t1)",fontFamily:"var(--mono)",letterSpacing:"-.02em"}}>{fmt(f.total)}<span style={{fontSize:12,color:"var(--t3)",marginLeft:4}}>Kč</span></div>
-                <div style={{fontSize:11,color:"var(--t3)",marginTop:2,fontFamily:"var(--mono)"}}>{fmt(f.pricePerLiter,2)} {f.fuelType?.startsWith("Elektřina")?"Kč/kWh":"Kč/L"}</div>
+                <div style={{fontSize:20,fontWeight:300,color:"var(--t1)",fontFamily:"Arial, Helvetica, sans-serif",letterSpacing:"-.02em"}}>{fmt(f.total)}<span style={{fontSize:12,color:"var(--t3)",marginLeft:4}}>Kč</span></div>
+                <div style={{fontSize:11,color:"var(--t3)",marginTop:2,fontFamily:"Arial, Helvetica, sans-serif"}}>{fmt(f.pricePerLiter,2)} {f.fuelType?.startsWith("Elektřina")?"Kč/kWh":"Kč/L"}</div>
               </div>
             </div>
             <div style={{height:"1px",background:"var(--b1)",marginBottom:12}}/>
@@ -351,7 +352,8 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
                 })()}
               </div>
             </FR>
-            <FR label="Typ paliva"><select value={form.fuelType} onChange={e=>sf("fuelType",e.target.value)}>
+            <FR label="Typ paliva">
+              <select value={form.fuelType} onChange={e=>{sf("fuelType",e.target.value);if(e.target.value!=="__custom__") sf("customFuel","");}}>
   {[
     "── Benzín ──────────────",
     "Natural 95",
@@ -367,7 +369,6 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
     "MOL Evo 95",
     "MOL Evo 100",
     "Orlen Effecta 95",
-    "Orlen Blåkläder 100",
     "Globus 95",
     "── Diesel ──────────────",
     "Diesel B7",
@@ -388,12 +389,18 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
     "── Ostatní ─────────────",
     "AdBlue",
     "Vodík",
+    "── Jiné ────────────────",
+    "__custom__",
   ].map(o => o.startsWith("──")
     ? <option key={o} disabled style={{color:"#555",fontSize:11}}>{o}</option>
-    : <option key={o}>{o}</option>
+    : o==="__custom__"
+      ? <option key={o} value="__custom__">✎ Zadat ručně...</option>
+      : <option key={o}>{o}</option>
   )}
-</select></FR>
-            <FR label={isElectric?"kWh":"Litry"} half><input type="number" inputMode="decimal" step=".01" value={form.liters} onChange={e=>sf("liters",e.target.value)} placeholder={isElectric?"55.0":"45.5"}/></FR>
+</select>
+              {form.fuelType==="__custom__"&&<input value={form.customFuel||""} onChange={e=>sf("customFuel",e.target.value)} placeholder="Název paliva..." style={{marginTop:8}} autoFocus/>}
+            </FR>
+            <FR label={isElectric?"kWh":"Litry"} half><input type="number" inputMode="decimal" step=".01" value={form.liters} onChange={e=>sf("liters",e.target.value)} placeholder={isElectric?"55.00":"45.50"}/></FR>
             <FR label={isElectric?"Kč / kWh":"Kč / litr"} half><input type="number" inputMode="decimal" step=".01" value={form.pricePerLiter} onChange={e=>sf("pricePerLiter",e.target.value)} placeholder={isElectric?"5.50":"38.90"}/></FR>
             <FR label="Celkem Kč"><input type="number" inputMode="decimal" step=".01" value={form.total||""} onChange={e=>sf("total",e.target.value)} placeholder="Vypočítá se automaticky" style={{color:"var(--acc)",fontWeight:700}}/></FR>
           </div>
@@ -1109,7 +1116,7 @@ export default function App() {
                         <IBtn onClick={()=>delVehicle(av.id)} danger>🗑</IBtn>
                       </div>
                     </div>
-                    {av.vin&&<div style={{fontSize:10,color:"var(--t2)",marginTop:14,fontFamily:"Arial, Helvetica, sans-serif",letterSpacing:".08em",fontVariantNumeric:"normal"}}>VIN · {av.vin}</div>}
+                    {av.vin&&<div onClick={()=>{navigator.clipboard.writeText(av.vin);}} title="Kopírovat VIN" style={{fontSize:10,color:"var(--t2)",marginTop:14,fontFamily:"Arial, Helvetica, sans-serif",letterSpacing:".08em",fontVariantNumeric:"normal",cursor:"pointer",userSelect:"none"}} onMouseEnter={e=>e.currentTarget.style.color="var(--acc)"} onMouseLeave={e=>e.currentTarget.style.color="var(--t2)"}>VIN · {av.vin} 📋</div>}
                     <div style={{marginTop:14,paddingTop:14,borderTop:"1px solid var(--b1)",display:"flex",gap:10,flexWrap:"wrap"}}>
                       <div style={{flex:1,minWidth:120,background:"var(--s2)",borderRadius:10,padding:"10px 12px",border:`1px solid ${expColor(stkDays)}22`}}>
                         <div style={{fontSize:9,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:4}}>STK</div>
