@@ -282,8 +282,8 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
                 <div style={{fontSize:12,color:"var(--t3)",marginTop:3}}>{f.fuelType}</div>
               </div>
               <div style={{textAlign:"right"}}>
-                <div style={{fontSize:20,fontWeight:300,color:"var(--t1)",fontFamily:"Arial, Helvetica, sans-serif",letterSpacing:"-.02em"}}>{fmt(f.total)}<span style={{fontSize:12,color:"var(--t3)",marginLeft:4}}>Kč</span></div>
-                <div style={{fontSize:11,color:"var(--t3)",marginTop:2,fontFamily:"Arial, Helvetica, sans-serif"}}>{fmt(f.pricePerLiter,2)} {f.fuelType?.startsWith("Elektřina")?"Kč/kWh":"Kč/L"}</div>
+                <div style={{fontSize:20,fontWeight:500,color:"var(--t1)",fontFamily:"Arial, Helvetica, sans-serif",letterSpacing:"-.01em"}}>{fmt(f.total)}<span style={{fontSize:12,color:"var(--t3)",marginLeft:4}}>Kč</span></div>
+                <div style={{fontSize:11,color:"var(--t3)",marginTop:2,fontFamily:"Arial, Helvetica, sans-serif",fontWeight:400}}>{fmt(f.pricePerLiter,2)} {f.fuelType?.startsWith("Elektřina")?"Kč/kWh":"Kč/L"}</div>
               </div>
             </div>
             <div style={{height:"1px",background:"var(--b1)",marginBottom:12}}/>
@@ -1116,7 +1116,23 @@ export default function App() {
                         <IBtn onClick={()=>delVehicle(av.id)} danger>🗑</IBtn>
                       </div>
                     </div>
-                    {av.vin&&<div onClick={()=>{navigator.clipboard.writeText(av.vin);}} title="Kopírovat VIN" style={{fontSize:10,color:"var(--t2)",marginTop:14,fontFamily:"Arial, Helvetica, sans-serif",letterSpacing:".08em",fontVariantNumeric:"normal",cursor:"pointer",userSelect:"none"}} onMouseEnter={e=>e.currentTarget.style.color="var(--acc)"} onMouseLeave={e=>e.currentTarget.style.color="var(--t2)"}>VIN · {av.vin} 📋</div>}
+                    {av.vin&&<div onClick={()=>{
+                      const copy = (text) => {
+                        if(navigator.clipboard&&window.isSecureContext){
+                          navigator.clipboard.writeText(text).catch(()=>{});
+                        } else {
+                          const ta=document.createElement("textarea");
+                          ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+                          document.body.appendChild(ta); ta.focus(); ta.select();
+                          document.execCommand("copy"); document.body.removeChild(ta);
+                        }
+                      };
+                      copy(av.vin);
+                      const el = document.getElementById("vin-toast-"+av.id);
+                      if(el){el.style.opacity="1"; setTimeout(()=>el.style.opacity="0",1500);}
+                    }} title="Kopírovat VIN" style={{fontSize:10,color:"var(--t2)",marginTop:14,fontFamily:"Arial, Helvetica, sans-serif",letterSpacing:".08em",fontVariantNumeric:"normal",cursor:"pointer",userSelect:"none",position:"relative",display:"inline-block"}} onMouseEnter={e=>e.currentTarget.style.color="var(--acc)"} onMouseLeave={e=>e.currentTarget.style.color="var(--t2)"}>VIN · {av.vin} 📋
+                      <span id={"vin-toast-"+av.id} style={{position:"absolute",left:"50%",transform:"translateX(-50%)",bottom:"120%",background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:6,padding:"3px 10px",fontSize:10,color:"var(--acc)",whiteSpace:"nowrap",opacity:0,transition:"opacity .2s",pointerEvents:"none"}}>Zkopírováno!</span>
+                    </div>}
                     <div style={{marginTop:14,paddingTop:14,borderTop:"1px solid var(--b1)",display:"flex",gap:10,flexWrap:"wrap"}}>
                       <div style={{flex:1,minWidth:120,background:"var(--s2)",borderRadius:10,padding:"10px 12px",border:`1px solid ${expColor(stkDays)}22`}}>
                         <div style={{fontSize:9,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",marginBottom:4}}>STK</div>
