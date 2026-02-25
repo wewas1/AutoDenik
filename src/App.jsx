@@ -149,9 +149,9 @@ const Modal = ({title,onClose,children}) => {
     return ()=>{ document.body.style.overflow=""; };
   },[]);
   return ReactDOM.createPortal(
-    <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",background:"rgba(0,0,0,.8)",zIndex:9999,display:"flex",flexDirection:"column",backdropFilter:"blur(10px)"}} onClick={onClose}>
-      <div style={{flex:1,overflowY:"auto",padding:"16px 16px 40px",display:"flex",flexDirection:"column",alignItems:"center"}} onClick={e=>e.stopPropagation()}>
-        <div style={{background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:20,width:"100%",maxWidth:560,padding:"20px 20px 28px"}} onClick={e=>e.stopPropagation()}>
+    <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",background:"rgba(0,0,0,.8)",zIndex:9999,display:"flex",alignItems:"flex-start",justifyContent:"center",backdropFilter:"blur(10px)",overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"16px 16px 40px"}} onClick={onClose}>
+      <div style={{width:"100%",maxWidth:560,marginTop:"auto",marginBottom:"auto"}} onClick={e=>e.stopPropagation()}>
+        <div style={{background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:20,width:"100%",padding:"20px 20px 28px"}} onClick={e=>e.stopPropagation()}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"1px solid var(--b1)"}}>
             <h2 style={{fontSize:18,fontWeight:500,letterSpacing:"-.01em"}}>{title}</h2>
             <button onClick={onClose} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,color:"var(--t3)",fontSize:16,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>✕</button>
