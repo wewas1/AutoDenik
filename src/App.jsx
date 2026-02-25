@@ -745,10 +745,12 @@ export default function App() {
       setAuthLoading(false);
     });
     const {data:{subscription}} = supabase.auth.onAuthStateChange((event,session)=>{
-      setUser(session?.user ?? null);
-      // When user just signed in, offer biometric if available and not yet set
-      if(event==="SIGNED_IN" && session?.user){
+      if(event==="PASSWORD_RECOVERY"){
+        setUser(null);
+        setAuthMode("newpassword");
+        return;
       }
+      setUser(session?.user ?? null);
     });
 
     // PWA install prompt
