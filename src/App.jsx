@@ -42,7 +42,7 @@ const CSS = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root, [data-theme="dark"] {
+    :root {
       --bg:  #0a0a0a;
       --s1:  #111111;
       --s2:  #181818;
@@ -60,24 +60,6 @@ const CSS = () => (
       --font:'DM Sans', sans-serif;
       --mono:'DM Mono', monospace;
     }
-    [data-theme="light"] {
-      --bg:  #f2f0eb;
-      --s1:  #ffffff;
-      --s2:  #f7f5f0;
-      --s3:  #ede9e2;
-      --b1:  #ddd9d0;
-      --b2:  #ccc8c0;
-      --acc: #b8924a;
-      --acc2:#c8a96e;
-      --blue:#3a6fd8;
-      --green:#2a9a50;
-      --red: #cc3333;
-      --t1:  #1a1a16;
-      --t2:  #666660;
-      --t3:  #999990;
-      --font:'DM Sans', sans-serif;
-      --mono:'DM Mono', monospace;
-    }
     html, body, #root { height:100%; background:var(--bg); color:var(--t1); font-family:var(--font); transition: background .3s, color .3s; }
     * { scrollbar-width:thin; scrollbar-color:var(--b2) transparent; }
     ::-webkit-scrollbar { width:3px; }
@@ -85,10 +67,12 @@ const CSS = () => (
     input, select, textarea {
       background:var(--s2); color:var(--t1); border:1px solid var(--b1);
       border-radius:10px; padding:13px 16px; font-family:var(--font);
-      font-size:16px; width:100%; outline:none; transition:border-color .2s, box-shadow .2s;
+      font-size:16px; width:100%; outline:none; transition:border-color .2s, box-shadow .2s, background .3s, color .3s;
       -webkit-appearance:none; appearance:none; letter-spacing:.01em;
       font-variant-numeric: normal;
     }
+    select { background-color:var(--s2) !important; color:var(--t1) !important; }
+    select option { background-color:var(--s2) !important; color:var(--t1) !important; }
     input.vin-input {
       font-family: Arial, Helvetica, sans-serif !important;
       font-variant-numeric: normal;
@@ -100,7 +84,17 @@ const CSS = () => (
       border-color:var(--acc);
       box-shadow:0 0 0 3px rgba(200,169,110,.1);
     }
-    select option { background:var(--s2); }
+    select option { background:var(--s2); color:var(--t1); }
+    select option:disabled { color:var(--t3) !important; }
+    input[list]::-webkit-calendar-picker-indicator { opacity: 0; }
+    /* Date input styling */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.5);
+      cursor: pointer;
+    }
+    [data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.3);
+    }
     button { cursor:pointer; font-family:var(--font); -webkit-tap-highlight-color:transparent; }
     @keyframes up { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
     .au { animation:up .25s ease forwards; }
@@ -192,7 +186,9 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
   const [editId,setEditId] = useState(null);
   const [fFrom,setFFrom] = useState("");
   const [fTo,setFTo] = useState("");
-  const ef = {date:new Date().toISOString().slice(0,10),location:"",fuelType:"Natural 95",liters:"",pricePerLiter:"",total:"",km:""};
+  const [showLocSug,setShowLocSug] = useState(false);
+  const getLastFuel = () => localStorage.getItem("ad_last_fuel")||"Natural 95";
+  const ef = {date:new Date().toISOString().slice(0,10),location:"",fuelType:getLastFuel(),liters:"",pricePerLiter:"",total:"",km:""};
   const [form,setForm] = useState(ef);
   const isElectric = form.fuelType?.startsWith("Elektřina");
 
@@ -220,9 +216,10 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
       const p=parseFloat(k==="pricePerLiter"?v:u.pricePerLiter)||0;
       u.total=(l*p).toFixed(2);
     }
+    if(k==="fuelType") localStorage.setItem("ad_last_fuel",v);
     setForm(u);
   };
-  const openNew=()=>{setForm(ef);setEditId(null);setShowF(true);};
+  const openNew=()=>{setForm({...ef,fuelType:getLastFuel()});setEditId(null);setShowF(true);};
   const openEdit=f=>{setForm({...f,liters:String(f.liters),pricePerLiter:String(f.pricePerLiter),km:String(f.km)});setEditId(f.id);setShowF(true);};
   const save=async()=>{
     const total=parseFloat(form.liters)*parseFloat(form.pricePerLiter);
@@ -316,7 +313,44 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <FR label="Datum" half><input type="date" value={form.date} onChange={e=>sf("date",e.target.value)}/></FR>
             <FR label="Stav km" half><input type="number" inputMode="numeric" value={form.km} onChange={e=>sf("km",e.target.value)} placeholder="89500"/></FR>
-            <FR label="Místo tankování"><input value={form.location} onChange={e=>sf("location",e.target.value)} placeholder="Shell, OMV..."/></FR>
+            <FR label="Místo tankování">
+              <div style={{position:"relative"}}>
+                <input
+                  value={form.location}
+                  onChange={e=>sf("location",e.target.value)}
+                  onFocus={()=>setShowLocSug(true)}
+                  onBlur={()=>setTimeout(()=>setShowLocSug(false),150)}
+                  placeholder="Shell, OMV..."
+                  autoComplete="off"
+                />
+                {showLocSug&&form.location.length>=1&&(()=>{
+                  const sugs = [...new Set(fueling.filter(f=>f.location&&f.location.toLowerCase().includes(form.location.toLowerCase())).map(f=>f.location))].slice(0,5);
+                  return sugs.length>0?(
+                    <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"var(--s1)",border:"1px solid var(--acc)",borderRadius:10,zIndex:999,overflow:"hidden",boxShadow:"0 4px 16px rgba(0,0,0,.3)"}}>
+                      {sugs.map(s=>(
+                        <div key={s} onMouseDown={()=>{sf("location",s);setShowLocSug(false);}} style={{padding:"11px 14px",fontSize:14,color:"var(--t1)",cursor:"pointer",borderBottom:"1px solid var(--b1)"}}
+                          onMouseEnter={e=>e.currentTarget.style.background="var(--s2)"}
+                          onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                        >{s}</div>
+                      ))}
+                    </div>
+                  ):null;
+                })()}
+                {showLocSug&&form.location.length===0&&(()=>{
+                  const all = [...new Set(fueling.filter(f=>f.location).map(f=>f.location))].slice(0,5);
+                  return all.length>0?(
+                    <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:10,zIndex:999,overflow:"hidden",boxShadow:"0 4px 16px rgba(0,0,0,.3)"}}>
+                      {all.map(s=>(
+                        <div key={s} onMouseDown={()=>{sf("location",s);setShowLocSug(false);}} style={{padding:"11px 14px",fontSize:14,color:"var(--t2)",cursor:"pointer",borderBottom:"1px solid var(--b1)"}}
+                          onMouseEnter={e=>e.currentTarget.style.background="var(--s2)"}
+                          onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                        >{s}</div>
+                      ))}
+                    </div>
+                  ):null;
+                })()}
+              </div>
+            </FR>
             <FR label="Typ paliva"><select value={form.fuelType} onChange={e=>sf("fuelType",e.target.value)}>
   {[
     "── Benzín ──────────────",
@@ -327,8 +361,8 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
     "Shell V-Power Racing 98",
     "OMV MaxMotion 95",
     "OMV MaxMotion 100",
-    "Benzina Verva 95",
-    "Benzina Verva Racing 100",
+    "Orlen Verva 95",
+    "Orlen Verva Racing 100",
     "EuroOil Excellium 95",
     "MOL Evo 95",
     "MOL Evo 100",
@@ -340,7 +374,7 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
     "── Prémiový Diesel ─────",
     "Shell V-Power Diesel",
     "OMV MaxMotion Diesel",
-    "Benzina Verva Diesel",
+    "Orlen Verva Diesel",
     "EuroOil Excellium Diesel",
     "MOL Evo Diesel",
     "Orlen Effecta Diesel",
@@ -379,6 +413,7 @@ const RepMod = ({vid,repairs,saveRepair,delRepair}) => {
   const [editId,setEditId] = useState(null);
   const [fFrom,setFFrom] = useState("");
   const [fTo,setFTo] = useState("");
+  const [showLocSug,setShowLocSug] = useState(false);
   const ef = {date:new Date().toISOString().slice(0,10),km:"",material:"",note:"",qty:"",unit:"ks",matPrice:"",laborPrice:"",who:"",comment:""};
   const [form,setForm] = useState(ef);
   const s = (k,v)=>setForm(p=>({...p,[k]:v}));
@@ -667,13 +702,33 @@ export default function App() {
   const [showExport, setShowExport] = useState(false);
   const [theme, setTheme] = useState(()=>{
     const saved = localStorage.getItem("ad_theme");
-    if(saved) return saved;
-    // Use system preference
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    const t = saved || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    // Apply immediately to avoid flash
+    const darkV = {"--bg":"#0a0a0a","--s1":"#111111","--s2":"#181818","--s3":"#202020","--b1":"#2a2a2a","--b2":"#333333","--acc":"#c8a96e","--acc2":"#e8c98e","--blue":"#6b9fff","--green":"#4ecb71","--red":"#e05c5c","--t1":"#f5f5f0","--t2":"#888880","--t3":"#666660"};
+    const lightV = {"--bg":"#f2f0eb","--s1":"#ffffff","--s2":"#f7f5f0","--s3":"#ede9e2","--b1":"#ddd9d0","--b2":"#ccc8c0","--acc":"#b8924a","--acc2":"#c8a96e","--blue":"#3a6fd8","--green":"#2a9a50","--red":"#cc3333","--t1":"#1a1a16","--t2":"#666660","--t3":"#999990"};
+    const vars = t==="light" ? lightV : darkV;
+    Object.entries(vars).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+    document.body.style.background = vars["--bg"];
+    return t;
   });
 
   useEffect(()=>{
-    document.documentElement.setAttribute("data-theme", theme);
+    const dark = {
+      "--bg":"#0a0a0a","--s1":"#111111","--s2":"#181818","--s3":"#202020",
+      "--b1":"#2a2a2a","--b2":"#333333","--acc":"#c8a96e","--acc2":"#e8c98e",
+      "--blue":"#6b9fff","--green":"#4ecb71","--red":"#e05c5c",
+      "--t1":"#f5f5f0","--t2":"#888880","--t3":"#666660"
+    };
+    const light = {
+      "--bg":"#f2f0eb","--s1":"#ffffff","--s2":"#f7f5f0","--s3":"#ede9e2",
+      "--b1":"#ddd9d0","--b2":"#ccc8c0","--acc":"#b8924a","--acc2":"#c8a96e",
+      "--blue":"#3a6fd8","--green":"#2a9a50","--red":"#cc3333",
+      "--t1":"#1a1a16","--t2":"#666660","--t3":"#999990"
+    };
+    const vars = theme==="light" ? light : dark;
+    Object.entries(vars).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+    document.documentElement.style.setProperty("background",vars["--bg"]);
+    document.body.style.background = vars["--bg"];
     localStorage.setItem("ad_theme", theme);
   },[theme]);
   const [editV, setEditV] = useState(null);
@@ -887,6 +942,9 @@ export default function App() {
               {authMode==="login"&&<div style={{fontSize:11,color:"var(--t3)",textAlign:"center"}}>Přihlášení vydrží 60 dní bez nutnosti zadávat heslo znovu</div>}
             </div>
           </div>
+          <div style={{textAlign:"center",marginTop:20,paddingTop:16,borderTop:"1px solid var(--b1)"}}>
+            <a href="/privacy" style={{fontSize:11,color:"var(--t3)",textDecoration:"none",letterSpacing:".04em"}} target="_blank">🔒 Zásady ochrany osobních údajů</a>
+          </div>
         </div>
       </div>
 
@@ -1039,6 +1097,11 @@ export default function App() {
               <button onClick={()=>exportJSON({vehicles,fueling,repairs,addons,exportDate:new Date().toISOString()},"autodenik-zaloha.json")} style={{background:"var(--s2)",border:"1px solid var(--acc)",borderRadius:10,padding:"12px 16px",color:"var(--acc)",fontSize:14,fontWeight:500,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
                 <span style={{fontSize:20}}>💾</span> Kompletní záloha (.json)
               </button>
+              <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",margin:"16px 0 4px"}}>Informace</div>
+              <a href="/privacy" target="_blank" style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:10,padding:"12px 16px",color:"var(--t2)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10,textDecoration:"none"}}>
+                <span style={{fontSize:18}}>🔒</span>
+                Zásady ochrany osobních údajů
+              </a>
               <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--red)",textTransform:"uppercase",margin:"16px 0 4px"}}>Nebezpečná zóna</div>
               <button onClick={()=>{setShowExport(false);deleteAccount();}} style={{background:"rgba(224,92,92,.08)",border:"1px solid rgba(224,92,92,.25)",borderRadius:10,padding:"12px 16px",color:"var(--red)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
