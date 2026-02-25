@@ -4,8 +4,8 @@
   "description": "Evidence vozidel – tankování, opravy, doplňky",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0a0a0a",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
   "orientation": "portrait",
   "icons": [
     { "src": "/logo.svg", "sizes": "192x192", "type": "image/svg+xml" },
