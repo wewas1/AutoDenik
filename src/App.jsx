@@ -1132,7 +1132,7 @@ export default function App() {
                       copy(av.vin);
                       const el = document.getElementById("vin-toast-"+av.id);
                       if(el){el.style.opacity="1"; setTimeout(()=>el.style.opacity="0",1500);}
-                    }} title="Kopírovat VIN" style={{fontSize:10,color:"var(--t2)",marginTop:14,fontFamily:"Arial, Helvetica, sans-serif",letterSpacing:".08em",fontVariantNumeric:"normal",cursor:"pointer",userSelect:"none",position:"relative",display:"inline-block"}} onMouseEnter={e=>e.currentTarget.style.color="var(--acc)"} onMouseLeave={e=>e.currentTarget.style.color="var(--t2)"}>VIN · {av.vin} 📋
+                    }} title="Kopírovat VIN" style={{fontSize:10,color:"var(--t2)",marginTop:14,fontFamily:"Arial, Helvetica, sans-serif",letterSpacing:".08em",fontVariantNumeric:"normal",cursor:"pointer",userSelect:"none",position:"relative",display:"inline-block"}} onMouseEnter={e=>{const s=e.currentTarget.querySelector(".vin-num");if(s)s.style.color="var(--acc)";}} onMouseLeave={e=>{const s=e.currentTarget.querySelector(".vin-num");if(s)s.style.color="";}}>VIN · <span className="vin-num">{av.vin}</span> <span style={{opacity:.5}}>📋</span>
                       <span id={"vin-toast-"+av.id} style={{position:"absolute",left:"50%",transform:"translateX(-50%)",bottom:"120%",background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:6,padding:"3px 10px",fontSize:10,color:"var(--acc)",whiteSpace:"nowrap",opacity:0,transition:"opacity .2s",pointerEvents:"none"}}>Zkopírováno!</span>
                     </div>}
                     <div style={{marginTop:14,paddingTop:14,borderTop:"1px solid var(--b1)",display:"flex",gap:10,flexWrap:"wrap"}}>
