@@ -42,7 +42,7 @@ const CSS = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root, [data-theme="dark"] {
+    :root {
       --bg:  #0a0a0a;
       --s1:  #111111;
       --s2:  #181818;
@@ -57,24 +57,6 @@ const CSS = () => (
       --t1:  #f5f5f0;
       --t2:  #888880;
       --t3:  #666660;
-      --font:'DM Sans', sans-serif;
-      --mono:'DM Mono', monospace;
-    }
-    [data-theme="light"] {
-      --bg:  #f2f0eb;
-      --s1:  #ffffff;
-      --s2:  #f7f5f0;
-      --s3:  #ede9e2;
-      --b1:  #ddd9d0;
-      --b2:  #ccc8c0;
-      --acc: #b8924a;
-      --acc2:#c8a96e;
-      --blue:#3a6fd8;
-      --green:#2a9a50;
-      --red: #cc3333;
-      --t1:  #1a1a16;
-      --t2:  #666660;
-      --t3:  #999990;
       --font:'DM Sans', sans-serif;
       --mono:'DM Mono', monospace;
     }
@@ -684,13 +666,33 @@ export default function App() {
   const [showExport, setShowExport] = useState(false);
   const [theme, setTheme] = useState(()=>{
     const saved = localStorage.getItem("ad_theme");
-    if(saved) return saved;
-    // Use system preference
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    const t = saved || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    // Apply immediately to avoid flash
+    const darkV = {"--bg":"#0a0a0a","--s1":"#111111","--s2":"#181818","--s3":"#202020","--b1":"#2a2a2a","--b2":"#333333","--acc":"#c8a96e","--acc2":"#e8c98e","--blue":"#6b9fff","--green":"#4ecb71","--red":"#e05c5c","--t1":"#f5f5f0","--t2":"#888880","--t3":"#666660"};
+    const lightV = {"--bg":"#f2f0eb","--s1":"#ffffff","--s2":"#f7f5f0","--s3":"#ede9e2","--b1":"#ddd9d0","--b2":"#ccc8c0","--acc":"#b8924a","--acc2":"#c8a96e","--blue":"#3a6fd8","--green":"#2a9a50","--red":"#cc3333","--t1":"#1a1a16","--t2":"#666660","--t3":"#999990"};
+    const vars = t==="light" ? lightV : darkV;
+    Object.entries(vars).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+    document.body.style.background = vars["--bg"];
+    return t;
   });
 
   useEffect(()=>{
-    document.documentElement.setAttribute("data-theme", theme);
+    const dark = {
+      "--bg":"#0a0a0a","--s1":"#111111","--s2":"#181818","--s3":"#202020",
+      "--b1":"#2a2a2a","--b2":"#333333","--acc":"#c8a96e","--acc2":"#e8c98e",
+      "--blue":"#6b9fff","--green":"#4ecb71","--red":"#e05c5c",
+      "--t1":"#f5f5f0","--t2":"#888880","--t3":"#666660"
+    };
+    const light = {
+      "--bg":"#f2f0eb","--s1":"#ffffff","--s2":"#f7f5f0","--s3":"#ede9e2",
+      "--b1":"#ddd9d0","--b2":"#ccc8c0","--acc":"#b8924a","--acc2":"#c8a96e",
+      "--blue":"#3a6fd8","--green":"#2a9a50","--red":"#cc3333",
+      "--t1":"#1a1a16","--t2":"#666660","--t3":"#999990"
+    };
+    const vars = theme==="light" ? light : dark;
+    Object.entries(vars).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+    document.documentElement.style.setProperty("background",vars["--bg"]);
+    document.body.style.background = vars["--bg"];
     localStorage.setItem("ad_theme", theme);
   },[theme]);
   const [editV, setEditV] = useState(null);
