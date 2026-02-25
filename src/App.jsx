@@ -145,21 +145,18 @@ const IBtn = ({onClick,title,children,danger}) => (
 // ── MODAL ─────────────────────────────────────────────────────────────────────
 const Modal = ({title,onClose,children}) => {
   useEffect(()=>{
-    const prev = document.body.style.overflow;
     document.body.style.overflow="hidden";
-    document.documentElement.style.overflow="hidden";
-    return ()=>{ document.body.style.overflow=prev; document.documentElement.style.overflow=""; };
+    document.body.style.paddingRight="0px";
+    return ()=>{ document.body.style.overflow=""; document.body.style.paddingRight=""; };
   },[]);
   return ReactDOM.createPortal(
-    <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.8)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(10px)",padding:"16px"}} onClick={onClose}>
-      <div style={{width:"100%",maxWidth:560,height:"min(90vh, 800px)",display:"flex",flexDirection:"column",borderRadius:20,background:"var(--s1)",border:"1px solid var(--b2)"}} onClick={e=>e.stopPropagation()}>
-        <div style={{padding:"20px 20px 16px",borderBottom:"1px solid var(--b1)",flexShrink:0}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <h2 style={{fontSize:18,fontWeight:500,letterSpacing:"-.01em"}}>{title}</h2>
-            <button onClick={onClose} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,color:"var(--t3)",fontSize:16,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>✕</button>
-          </div>
+    <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.8)",zIndex:9999,backdropFilter:"blur(10px)",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"24px 16px"}} onClick={onClose}>
+      <div style={{width:"100%",maxWidth:560,maxHeight:"calc(100vh - 48px)",display:"flex",flexDirection:"column",borderRadius:20,background:"var(--s1)",border:"1px solid var(--b2)",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+        <div style={{padding:"20px 20px 16px",borderBottom:"1px solid var(--b1)",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <h2 style={{fontSize:18,fontWeight:500,letterSpacing:"-.01em"}}>{title}</h2>
+          <button onClick={onClose} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,color:"var(--t3)",fontSize:16,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation",flexShrink:0}}>✕</button>
         </div>
-        <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"20px 20px 28px"}}>
+        <div style={{overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"20px 20px 28px",flex:1}}>
           {children}
         </div>
       </div>
