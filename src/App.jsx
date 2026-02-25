@@ -67,10 +67,12 @@ const CSS = () => (
     input, select, textarea {
       background:var(--s2); color:var(--t1); border:1px solid var(--b1);
       border-radius:10px; padding:13px 16px; font-family:var(--font);
-      font-size:16px; width:100%; outline:none; transition:border-color .2s, box-shadow .2s;
+      font-size:16px; width:100%; outline:none; transition:border-color .2s, box-shadow .2s, background .3s, color .3s;
       -webkit-appearance:none; appearance:none; letter-spacing:.01em;
       font-variant-numeric: normal;
     }
+    select { background-color:var(--s2) !important; color:var(--t1) !important; }
+    select option { background-color:var(--s2) !important; color:var(--t1) !important; }
     input.vin-input {
       font-family: Arial, Helvetica, sans-serif !important;
       font-variant-numeric: normal;
