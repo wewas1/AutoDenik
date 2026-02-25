@@ -942,6 +942,9 @@ export default function App() {
               {authMode==="login"&&<div style={{fontSize:11,color:"var(--t3)",textAlign:"center"}}>Přihlášení vydrží 60 dní bez nutnosti zadávat heslo znovu</div>}
             </div>
           </div>
+          <div style={{textAlign:"center",marginTop:20,paddingTop:16,borderTop:"1px solid var(--b1)"}}>
+            <a href="/privacy" style={{fontSize:11,color:"var(--t3)",textDecoration:"none",letterSpacing:".04em"}} target="_blank">🔒 Zásady ochrany osobních údajů</a>
+          </div>
         </div>
       </div>
 
@@ -1094,6 +1097,11 @@ export default function App() {
               <button onClick={()=>exportJSON({vehicles,fueling,repairs,addons,exportDate:new Date().toISOString()},"autodenik-zaloha.json")} style={{background:"var(--s2)",border:"1px solid var(--acc)",borderRadius:10,padding:"12px 16px",color:"var(--acc)",fontSize:14,fontWeight:500,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
                 <span style={{fontSize:20}}>💾</span> Kompletní záloha (.json)
               </button>
+              <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",margin:"16px 0 4px"}}>Informace</div>
+              <a href="/privacy" target="_blank" style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:10,padding:"12px 16px",color:"var(--t2)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10,textDecoration:"none"}}>
+                <span style={{fontSize:18}}>🔒</span>
+                Zásady ochrany osobních údajů
+              </a>
               <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--red)",textTransform:"uppercase",margin:"16px 0 4px"}}>Nebezpečná zóna</div>
               <button onClick={()=>{setShowExport(false);deleteAccount();}} style={{background:"rgba(224,92,92,.08)",border:"1px solid rgba(224,92,92,.25)",borderRadius:10,padding:"12px 16px",color:"var(--red)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
