@@ -184,6 +184,7 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
   const [editId,setEditId] = useState(null);
   const [fFrom,setFFrom] = useState("");
   const [fTo,setFTo] = useState("");
+  const [showLocSug,setShowLocSug] = useState(false);
   const getLastFuel = () => localStorage.getItem("ad_last_fuel")||"Natural 95";
   const ef = {date:new Date().toISOString().slice(0,10),location:"",fuelType:getLastFuel(),liters:"",pricePerLiter:"",total:"",km:""};
   const [form,setForm] = useState(ef);
@@ -311,10 +312,42 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
             <FR label="Datum" half><input type="date" value={form.date} onChange={e=>sf("date",e.target.value)}/></FR>
             <FR label="Stav km" half><input type="number" inputMode="numeric" value={form.km} onChange={e=>sf("km",e.target.value)} placeholder="89500"/></FR>
             <FR label="Místo tankování">
-              <input list="location-suggestions" value={form.location} onChange={e=>sf("location",e.target.value)} placeholder="Shell, OMV..." autoComplete="off"/>
-              <datalist id="location-suggestions">
-                {[...new Set(fueling.filter(f=>f.location).map(f=>f.location))].map(l=><option key={l} value={l}/>)}
-              </datalist>
+              <div style={{position:"relative"}}>
+                <input
+                  value={form.location}
+                  onChange={e=>sf("location",e.target.value)}
+                  onFocus={()=>setShowLocSug(true)}
+                  onBlur={()=>setTimeout(()=>setShowLocSug(false),150)}
+                  placeholder="Shell, OMV..."
+                  autoComplete="off"
+                />
+                {showLocSug&&form.location.length>=1&&(()=>{
+                  const sugs = [...new Set(fueling.filter(f=>f.location&&f.location.toLowerCase().includes(form.location.toLowerCase())).map(f=>f.location))].slice(0,5);
+                  return sugs.length>0?(
+                    <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"var(--s1)",border:"1px solid var(--acc)",borderRadius:10,zIndex:999,overflow:"hidden",boxShadow:"0 4px 16px rgba(0,0,0,.3)"}}>
+                      {sugs.map(s=>(
+                        <div key={s} onMouseDown={()=>{sf("location",s);setShowLocSug(false);}} style={{padding:"11px 14px",fontSize:14,color:"var(--t1)",cursor:"pointer",borderBottom:"1px solid var(--b1)"}}
+                          onMouseEnter={e=>e.currentTarget.style.background="var(--s2)"}
+                          onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                        >{s}</div>
+                      ))}
+                    </div>
+                  ):null;
+                })()}
+                {showLocSug&&form.location.length===0&&(()=>{
+                  const all = [...new Set(fueling.filter(f=>f.location).map(f=>f.location))].slice(0,5);
+                  return all.length>0?(
+                    <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:10,zIndex:999,overflow:"hidden",boxShadow:"0 4px 16px rgba(0,0,0,.3)"}}>
+                      {all.map(s=>(
+                        <div key={s} onMouseDown={()=>{sf("location",s);setShowLocSug(false);}} style={{padding:"11px 14px",fontSize:14,color:"var(--t2)",cursor:"pointer",borderBottom:"1px solid var(--b1)"}}
+                          onMouseEnter={e=>e.currentTarget.style.background="var(--s2)"}
+                          onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                        >{s}</div>
+                      ))}
+                    </div>
+                  ):null;
+                })()}
+              </div>
             </FR>
             <FR label="Typ paliva"><select value={form.fuelType} onChange={e=>sf("fuelType",e.target.value)}>
   {[
@@ -378,6 +411,7 @@ const RepMod = ({vid,repairs,saveRepair,delRepair}) => {
   const [editId,setEditId] = useState(null);
   const [fFrom,setFFrom] = useState("");
   const [fTo,setFTo] = useState("");
+  const [showLocSug,setShowLocSug] = useState(false);
   const ef = {date:new Date().toISOString().slice(0,10),km:"",material:"",note:"",qty:"",unit:"ks",matPrice:"",laborPrice:"",who:"",comment:""};
   const [form,setForm] = useState(ef);
   const s = (k,v)=>setForm(p=>({...p,[k]:v}));
