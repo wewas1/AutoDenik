@@ -740,16 +740,29 @@ export default function App() {
 
   // Auth check on load
   useEffect(()=>{
-    supabase.auth.getSession().then(({data:{session}})=>{
-      setUser(session?.user ?? null);
+    // Zkontroluj hash PŘED načtením session - pokud jde o reset hesla, nezalogovat
+    const hash = window.location.hash;
+    const isRecovery = hash.includes("type=recovery") || hash.includes("type=signup");
+    
+    if(isRecovery){
+      // Nastav mód nového hesla a smaž hash aby se session nenačetla
+      setAuthMode("newpassword");
       setAuthLoading(false);
-    });
+      // Nezavolávej getSession - nechceme přihlásit uživatele
+    } else {
+      supabase.auth.getSession().then(({data:{session}})=>{
+        setUser(session?.user ?? null);
+        setAuthLoading(false);
+      });
+    }
+    
     const {data:{subscription}} = supabase.auth.onAuthStateChange((event,session)=>{
       if(event==="PASSWORD_RECOVERY"){
         setUser(null);
         setAuthMode("newpassword");
         return;
       }
+      if(authMode==="newpassword") return; // Nepřepisuj mód při recovery
       setUser(session?.user ?? null);
     });
 
