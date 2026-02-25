@@ -100,7 +100,17 @@ const CSS = () => (
       border-color:var(--acc);
       box-shadow:0 0 0 3px rgba(200,169,110,.1);
     }
-    select option { background:var(--s2); }
+    select option { background:var(--s2); color:var(--t1); }
+    select option:disabled { color:var(--t3) !important; }
+    input[list]::-webkit-calendar-picker-indicator { opacity: 0; }
+    /* Date input styling */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.5);
+      cursor: pointer;
+    }
+    [data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.3);
+    }
     button { cursor:pointer; font-family:var(--font); -webkit-tap-highlight-color:transparent; }
     @keyframes up { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
     .au { animation:up .25s ease forwards; }
@@ -192,7 +202,8 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
   const [editId,setEditId] = useState(null);
   const [fFrom,setFFrom] = useState("");
   const [fTo,setFTo] = useState("");
-  const ef = {date:new Date().toISOString().slice(0,10),location:"",fuelType:"Natural 95",liters:"",pricePerLiter:"",total:"",km:""};
+  const getLastFuel = () => localStorage.getItem("ad_last_fuel")||"Natural 95";
+  const ef = {date:new Date().toISOString().slice(0,10),location:"",fuelType:getLastFuel(),liters:"",pricePerLiter:"",total:"",km:""};
   const [form,setForm] = useState(ef);
   const isElectric = form.fuelType?.startsWith("Elektřina");
 
@@ -220,9 +231,10 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
       const p=parseFloat(k==="pricePerLiter"?v:u.pricePerLiter)||0;
       u.total=(l*p).toFixed(2);
     }
+    if(k==="fuelType") localStorage.setItem("ad_last_fuel",v);
     setForm(u);
   };
-  const openNew=()=>{setForm(ef);setEditId(null);setShowF(true);};
+  const openNew=()=>{setForm({...ef,fuelType:getLastFuel()});setEditId(null);setShowF(true);};
   const openEdit=f=>{setForm({...f,liters:String(f.liters),pricePerLiter:String(f.pricePerLiter),km:String(f.km)});setEditId(f.id);setShowF(true);};
   const save=async()=>{
     const total=parseFloat(form.liters)*parseFloat(form.pricePerLiter);
@@ -316,7 +328,12 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <FR label="Datum" half><input type="date" value={form.date} onChange={e=>sf("date",e.target.value)}/></FR>
             <FR label="Stav km" half><input type="number" inputMode="numeric" value={form.km} onChange={e=>sf("km",e.target.value)} placeholder="89500"/></FR>
-            <FR label="Místo tankování"><input value={form.location} onChange={e=>sf("location",e.target.value)} placeholder="Shell, OMV..."/></FR>
+            <FR label="Místo tankování">
+              <input list="location-suggestions" value={form.location} onChange={e=>sf("location",e.target.value)} placeholder="Shell, OMV..." autoComplete="off"/>
+              <datalist id="location-suggestions">
+                {[...new Set(fueling.filter(f=>f.location).map(f=>f.location))].map(l=><option key={l} value={l}/>)}
+              </datalist>
+            </FR>
             <FR label="Typ paliva"><select value={form.fuelType} onChange={e=>sf("fuelType",e.target.value)}>
   {[
     "── Benzín ──────────────",
@@ -327,8 +344,8 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
     "Shell V-Power Racing 98",
     "OMV MaxMotion 95",
     "OMV MaxMotion 100",
-    "Benzina Verva 95",
-    "Benzina Verva Racing 100",
+    "Orlen Verva 95",
+    "Orlen Verva Racing 100",
     "EuroOil Excellium 95",
     "MOL Evo 95",
     "MOL Evo 100",
@@ -340,7 +357,7 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
     "── Prémiový Diesel ─────",
     "Shell V-Power Diesel",
     "OMV MaxMotion Diesel",
-    "Benzina Verva Diesel",
+    "Orlen Verva Diesel",
     "EuroOil Excellium Diesel",
     "MOL Evo Diesel",
     "Orlen Effecta Diesel",
