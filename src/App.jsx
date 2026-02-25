@@ -805,11 +805,15 @@ export default function App() {
 
   // Auth handlers
   const resetPassword = async()=>{
-    if(!email){setAuthError("Zadej email");return;}
-    const {error} = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin
+    if(!email.trim()){setAuthError("Zadej svůj email");return;}
+    const {error} = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: "https://auto-denik.vercel.app"
     });
-    if(error){setAuthError(error.message);}
+    if(error){
+      if(error.message.includes("rate limit")) setAuthError("Příliš mnoho pokusů. Zkus to znovu za hodinu.");
+      else if(error.message.includes("not found")||error.message.includes("invalid")) setAuthError("Email nebyl nalezen.");
+      else setAuthError("Chyba: "+error.message);
+    }
     else{setAuthMsg("Odkaz na reset hesla byl odeslán na tvůj email.");setAuthError("");}
   };
 
@@ -937,14 +941,14 @@ export default function App() {
               ))}
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:14}}>
-              <div>
+              {authMode!=="reset"&&<div>
                 <label style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",display:"block",marginBottom:6}}>Email</label>
-                {authMode!=="reset"&&<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="vas@email.cz" onKeyDown={e=>e.key==="Enter"&&(authMode==="login"?login():register())}/>}
-              </div>
-              <div>
+                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="vas@email.cz" onKeyDown={e=>e.key==="Enter"&&(authMode==="login"?login():register())}/>
+              </div>}
+              {authMode!=="reset"&&<div>
                 <label style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",display:"block",marginBottom:6}}>Heslo</label>
-                {authMode!=="reset"&&<input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&(authMode==="login"?login():register())}/>}
-              </div>
+                <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&(authMode==="login"?login():register())}/>
+              </div>}
               {authMode!=="reset"&&authError&&<div style={{fontSize:12,color:"var(--red)",padding:"10px 12px",background:"rgba(224,92,92,.1)",borderRadius:8,border:"1px solid rgba(224,92,92,.2)"}}>{authError}</div>}
               {authMode!=="reset"&&authMsg&&<div style={{fontSize:12,color:"var(--green)",padding:"10px 12px",background:"rgba(78,203,113,.1)",borderRadius:8,border:"1px solid rgba(78,203,113,.2)"}}>{authMsg}</div>}
               {authMode!=="reset"&&<Btn onClick={authMode==="login"?login:register} full>{authMode==="login"?"Přihlásit se":"Zaregistrovat"}</Btn>}
