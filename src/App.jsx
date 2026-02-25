@@ -682,7 +682,12 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [authMode, setAuthMode] = useState("login"); // login | register | reset
+  const [authMode, setAuthMode] = useState(()=>{
+    // Check if URL contains password reset token
+    if(window.location.hash.includes("type=recovery")) return "newpassword";
+    return "login";
+  }); // login | register | reset | newpassword
+  const [newPassword, setNewPassword] = useState("");
   const [authError, setAuthError] = useState("");
   const [authMsg, setAuthMsg] = useState("");
   const [pwaPrompt, setPwaPrompt] = useState(null);
@@ -815,6 +820,19 @@ export default function App() {
       else setAuthError("Chyba: "+error.message);
     }
     else{setAuthMsg("Odkaz na reset hesla byl odeslán na tvůj email.");setAuthError("");}
+  };
+
+  const handleNewPassword = async()=>{
+    if(!newPassword||newPassword.length<6){setAuthError("Heslo musí mít alespoň 6 znaků");return;}
+    const {error} = await supabase.auth.updateUser({password: newPassword});
+    if(error){setAuthError("Chyba: "+error.message);}
+    else{
+      setAuthMsg("Heslo bylo úspěšně změněno. Můžeš se přihlásit.");
+      setAuthError("");
+      setNewPassword("");
+      window.location.hash = "";
+      setTimeout(()=>{setAuthMode("login");setAuthMsg("");},2500);
+    }
   };
 
   const login = async()=>{
@@ -966,6 +984,16 @@ export default function App() {
                   {authMsg&&<div style={{fontSize:12,color:"var(--green)",padding:"10px 12px",background:"rgba(78,203,113,.1)",borderRadius:8,border:"1px solid rgba(78,203,113,.2)"}}>{authMsg}</div>}
                   <button onClick={resetPassword} style={{background:"var(--acc)",border:"none",borderRadius:10,padding:"13px",color:"#0a0a0a",fontSize:15,fontWeight:600,touchAction:"manipulation",cursor:"pointer"}}>Odeslat odkaz</button>
                   <button onClick={()=>{setAuthMode("login");setAuthError("");setAuthMsg("");}} style={{background:"none",border:"none",color:"var(--t3)",fontSize:13,touchAction:"manipulation",cursor:"pointer"}}>← Zpět na přihlášení</button>
+                </div>
+              )}
+              {authMode==="newpassword"&&(
+                <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  <div style={{fontSize:15,fontWeight:600,color:"var(--t1)",textAlign:"center"}}>Nastavit nové heslo</div>
+                  <div style={{fontSize:13,color:"var(--t2)",textAlign:"center",lineHeight:1.5}}>Zadej své nové heslo.</div>
+                  <input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="Nové heslo (min. 6 znaků)" onKeyDown={e=>e.key==="Enter"&&handleNewPassword()}/>
+                  {authError&&<div style={{fontSize:12,color:"var(--red)",padding:"8px 12px",background:"rgba(224,92,92,.1)",borderRadius:8}}>{authError}</div>}
+                  {authMsg&&<div style={{fontSize:12,color:"var(--green)",padding:"10px 12px",background:"rgba(78,203,113,.1)",borderRadius:8,border:"1px solid rgba(78,203,113,.2)"}}>{authMsg}</div>}
+                  <button onClick={handleNewPassword} style={{background:"var(--acc)",border:"none",borderRadius:10,padding:"13px",color:"#0a0a0a",fontSize:15,fontWeight:600,touchAction:"manipulation",cursor:"pointer"}}>Uložit nové heslo</button>
                 </div>
               )}
             </div>
