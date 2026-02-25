@@ -682,7 +682,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [authMode, setAuthMode] = useState("login"); // login | register
+  const [authMode, setAuthMode] = useState("login"); // login | register | reset
   const [authError, setAuthError] = useState("");
   const [authMsg, setAuthMsg] = useState("");
   const [pwaPrompt, setPwaPrompt] = useState(null);
@@ -804,6 +804,15 @@ export default function App() {
   };
 
   // Auth handlers
+  const resetPassword = async()=>{
+    if(!email){setAuthError("Zadej email");return;}
+    const {error} = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin
+    });
+    if(error){setAuthError(error.message);}
+    else{setAuthMsg("Odkaz na reset hesla byl odeslán na tvůj email.");setAuthError("");}
+  };
+
   const login = async()=>{
     setAuthError("");
     const {data,error} = await supabase.auth.signInWithPassword({email,password});
@@ -930,16 +939,31 @@ export default function App() {
             <div style={{display:"flex",flexDirection:"column",gap:14}}>
               <div>
                 <label style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",display:"block",marginBottom:6}}>Email</label>
-                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="vas@email.cz" onKeyDown={e=>e.key==="Enter"&&(authMode==="login"?login():register())}/>
+                {authMode!=="reset"&&<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="vas@email.cz" onKeyDown={e=>e.key==="Enter"&&(authMode==="login"?login():register())}/>}
               </div>
               <div>
                 <label style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",display:"block",marginBottom:6}}>Heslo</label>
-                <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&(authMode==="login"?login():register())}/>
+                {authMode!=="reset"&&<input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&(authMode==="login"?login():register())}/>}
               </div>
-              {authError&&<div style={{fontSize:12,color:"var(--red)",padding:"10px 12px",background:"rgba(224,92,92,.1)",borderRadius:8,border:"1px solid rgba(224,92,92,.2)"}}>{authError}</div>}
-              {authMsg&&<div style={{fontSize:12,color:"var(--green)",padding:"10px 12px",background:"rgba(78,203,113,.1)",borderRadius:8,border:"1px solid rgba(78,203,113,.2)"}}>{authMsg}</div>}
-              <Btn onClick={authMode==="login"?login:register} full>{authMode==="login"?"Přihlásit se":"Zaregistrovat"}</Btn>
+              {authMode!=="reset"&&authError&&<div style={{fontSize:12,color:"var(--red)",padding:"10px 12px",background:"rgba(224,92,92,.1)",borderRadius:8,border:"1px solid rgba(224,92,92,.2)"}}>{authError}</div>}
+              {authMode!=="reset"&&authMsg&&<div style={{fontSize:12,color:"var(--green)",padding:"10px 12px",background:"rgba(78,203,113,.1)",borderRadius:8,border:"1px solid rgba(78,203,113,.2)"}}>{authMsg}</div>}
+              {authMode!=="reset"&&<Btn onClick={authMode==="login"?login:register} full>{authMode==="login"?"Přihlásit se":"Zaregistrovat"}</Btn>}
               {authMode==="login"&&<div style={{fontSize:11,color:"var(--t3)",textAlign:"center"}}>Přihlášení vydrží 60 dní bez nutnosti zadávat heslo znovu</div>}
+              {authMode==="login"&&(
+                <button onClick={()=>{setAuthMode("reset");setAuthError("");setAuthMsg("");}} style={{background:"none",border:"none",color:"var(--t3)",fontSize:12,touchAction:"manipulation",textDecoration:"underline",cursor:"pointer"}}>
+                  Zapomenuté heslo?
+                </button>
+              )}
+              {authMode==="reset"&&(
+                <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  <div style={{fontSize:13,color:"var(--t2)",textAlign:"center",lineHeight:1.5}}>Zadej svůj email a pošleme ti odkaz pro reset hesla.</div>
+                  <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="vas@email.cz" onKeyDown={e=>e.key==="Enter"&&resetPassword()}/>
+                  {authError&&<div style={{fontSize:12,color:"var(--red)",padding:"8px 12px",background:"rgba(224,92,92,.1)",borderRadius:8}}>{authError}</div>}
+                  {authMsg&&<div style={{fontSize:12,color:"var(--green)",padding:"10px 12px",background:"rgba(78,203,113,.1)",borderRadius:8,border:"1px solid rgba(78,203,113,.2)"}}>{authMsg}</div>}
+                  <button onClick={resetPassword} style={{background:"var(--acc)",border:"none",borderRadius:10,padding:"13px",color:"#0a0a0a",fontSize:15,fontWeight:600,touchAction:"manipulation",cursor:"pointer"}}>Odeslat odkaz</button>
+                  <button onClick={()=>{setAuthMode("login");setAuthError("");setAuthMsg("");}} style={{background:"none",border:"none",color:"var(--t3)",fontSize:13,touchAction:"manipulation",cursor:"pointer"}}>← Zpět na přihlášení</button>
+                </div>
+              )}
             </div>
           </div>
           <div style={{textAlign:"center",marginTop:20,paddingTop:16,borderTop:"1px solid var(--b1)"}}>
