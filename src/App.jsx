@@ -463,9 +463,9 @@ const RepMod = ({vid,repairs,saveRepair,delRepair}) => {
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
                 <div style={{flex:1,minWidth:0,marginRight:12}}>
                   <div style={{fontWeight:700,fontSize:15}}>{r.material}</div>
-                  {r.note&&<div style={{fontSize:11,color:"var(--t3)",fontFamily:"var(--mono)",marginTop:2}}>#{r.note}</div>}
+                  {r.note&&<div style={{fontSize:11,color:"var(--t3)",fontFamily:"Arial, Helvetica, sans-serif",marginTop:2}}>#{r.note}</div>}}
                 </div>
-                <div style={{fontSize:18,fontWeight:800,color:"var(--acc)",fontFamily:"var(--mono)",whiteSpace:"nowrap"}}>{fmt(total)} Kč</div>
+                <div style={{fontSize:18,fontWeight:500,color:"var(--t1)",fontFamily:"Arial, Helvetica, sans-serif",whiteSpace:"nowrap"}}>{fmt(total)}<span style={{fontSize:11,color:"var(--t3)",marginLeft:3}}>Kč</span></div>
               </div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
                 <Pill c="var(--t2)">{fmtD(r.date)}</Pill>
@@ -541,9 +541,9 @@ const AddMod = ({vid,addons,saveAddon,delAddon}) => {
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
               <div style={{flex:1,minWidth:0,marginRight:12}}>
                 <div style={{fontWeight:700,fontSize:15}}>{a.name}</div>
-                {a.note&&<div style={{fontSize:11,color:"var(--t3)",fontFamily:"var(--mono)",marginTop:2}}>#{a.note}</div>}
+                {a.note&&<div style={{fontSize:11,color:"var(--t3)",fontFamily:"Arial, Helvetica, sans-serif",marginTop:2}}>#{a.note}</div>}}
               </div>
-              <div style={{fontSize:18,fontWeight:800,color:"var(--green)",whiteSpace:"nowrap"}}>{fmt(a.price)} Kč</div>
+              <div style={{fontSize:18,fontWeight:500,color:"var(--t1)",fontFamily:"Arial, Helvetica, sans-serif",whiteSpace:"nowrap"}}>{fmt(a.price)}<span style={{fontSize:11,color:"var(--t3)",marginLeft:3}}>Kč</span></div>
             </div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
               <Pill c="var(--t2)">{fmtD(a.date)}</Pill>
