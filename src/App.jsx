@@ -386,20 +386,15 @@ Pokud nějakou hodnotu nenajdeš, dej null. Datum ve formátu YYYY-MM-DD. Litry 
                   <span style={{fontSize:20}}>⏳</span> Čtu účtenku...
                 </div>
               ) : (
-                <div style={{display:"flex",gap:8}}>
-                  <label style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"var(--s2)",border:"1.5px solid var(--b2)",borderRadius:12,padding:"13px 10px",color:"var(--t2)",fontSize:13,fontWeight:500,touchAction:"manipulation",cursor:"pointer",userSelect:"none"}}>
-                    <input type="file" accept="image/*" style={{position:"absolute",opacity:0,width:0,height:0,overflow:"hidden"}}
-                      onChange={e=>{ const f=e.target.files?.[0]; if(f) scanReceipt(f); e.target.value=""; }}
-                    />
-                    <span style={{fontSize:18}}>📷</span> Foto
-                  </label>
-                  <label style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"var(--s2)",border:"1.5px solid var(--b2)",borderRadius:12,padding:"13px 10px",color:"var(--t2)",fontSize:13,fontWeight:500,touchAction:"manipulation",cursor:"pointer",userSelect:"none"}}>
-                    <input type="file" accept="image/*,application/pdf" style={{position:"absolute",opacity:0,width:0,height:0,overflow:"hidden"}}
-                      onChange={e=>{ const f=e.target.files?.[0]; if(f) scanReceipt(f); e.target.value=""; }}
-                    />
-                    <span style={{fontSize:18}}>📁</span> PDF / Galerie
-                  </label>
-                </div>
+                <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:"var(--s2)",border:"1.5px dashed var(--b2)",borderRadius:12,padding:"14px 16px",color:"var(--t2)",fontSize:14,fontWeight:500,touchAction:"manipulation",cursor:"pointer",userSelect:"none",width:"100%",boxSizing:"border-box"}}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor="var(--acc)"}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor="var(--b2)"}
+                >
+                  <input type="file" accept="image/*,application/pdf" style={{position:"absolute",opacity:0,width:0,height:0}}
+                    onChange={e=>{ const f=e.target.files?.[0]; if(f) scanReceipt(f); e.target.value=""; }}
+                  />
+                  <span style={{fontSize:20}}>📷</span> Načíst z účtenky
+                </label>
               )}
               {scanError&&<div style={{fontSize:12,color:"var(--red)",marginTop:8,padding:"8px 12px",background:"rgba(224,92,92,.1)",borderRadius:8,border:"1px solid rgba(224,92,92,.2)"}}>{scanError}</div>}
             </div>
@@ -681,11 +676,12 @@ const AddMod = ({vid,addons,saveAddon,delAddon}) => {
 
 // ── VEHICLE DRAWER ─────────────────────────────────────────────────────────────
 const VehicleDrawer = ({vehicles,activeVid,setActiveVid,onAdd,onClose}) => (
-  <div style={{position:"fixed",inset:0,zIndex:500,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
-    <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.7)",backdropFilter:"blur(8px)"}} onClick={onClose}/>
-    <div style={{position:"relative",background:"var(--s1)",borderTop:"1px solid var(--b2)",borderRadius:"20px 20px 0 0",padding:"0 18px 40px",maxHeight:"80vh",overflowY:"auto"}}>
-      <div style={{width:36,height:3,background:"var(--b2)",borderRadius:2,margin:"14px auto 20px"}}/>
-      <div style={{fontSize:10,fontWeight:500,letterSpacing:".14em",color:"var(--t3)",textTransform:"uppercase",marginBottom:16}}>Vaše vozidla</div>
+  <div style={{position:"fixed",inset:0,zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:16,backdropFilter:"blur(8px)",background:"rgba(0,0,0,.7)"}} onClick={onClose}>
+    <div style={{position:"relative",background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:20,padding:"20px 20px 28px",width:"100%",maxWidth:480,maxHeight:"80vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}} onClick={e=>e.stopPropagation()}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,paddingBottom:16,borderBottom:"1px solid var(--b1)"}}>
+        <div style={{fontSize:10,fontWeight:500,letterSpacing:".14em",color:"var(--t3)",textTransform:"uppercase"}}>Vaše vozidla</div>
+        <button onClick={onClose} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,color:"var(--t3)",fontSize:16,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>✕</button>
+      </div>
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {vehicles.map(v=>(
           <div key={v.id} onClick={()=>{setActiveVid(v.id);onClose();}} style={{
