@@ -71,6 +71,7 @@ const CSS = () => (
       -webkit-appearance:none; appearance:none; letter-spacing:.01em;
       font-variant-numeric: normal;
     }
+    input::placeholder, textarea::placeholder { color:var(--t3); opacity:.5; }
     select { background-color:var(--s2) !important; color:var(--t1) !important; }
     select option { background-color:var(--s2) !important; color:var(--t1) !important; }
     input.vin-input {
