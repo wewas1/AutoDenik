@@ -247,30 +247,15 @@ const getLastFuelForForm = () => {
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-      const isPDF = file.type === "application/pdf";
-      const mediaType = isPDF ? "application/pdf" : file.type || "image/jpeg";
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const mediaType = file.type || "image/jpeg";
+      const response = await fetch(`${SUPA_URL}/functions/v1/scan-receipt`, {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{
-            role: "user",
-            content: [
-              {type: isPDF?"document":"image", source:{type:"base64",media_type:mediaType,data:base64}},
-              {type:"text",text:`Přečti tuto účtenku z čerpací stanice a vrať POUZE JSON objekt bez jakéhokoliv dalšího textu nebo markdown. Formát:
-{"date":"YYYY-MM-DD","location":"název stanice a adresa","fuelType":"typ paliva","liters":číslo,"pricePerLiter":číslo,"total":číslo,"km":null}
-Pokud nějakou hodnotu nenajdeš, dej null. Datum ve formátu YYYY-MM-DD. Litry a ceny jako čísla bez jednotek. Typ paliva česky (Natural 95, Diesel B7, apod.).`}
-            ]
-          }]
-        })
+        headers: {"Content-Type": "application/json", "apikey": SUPA_KEY},
+        body: JSON.stringify({imageBase64: base64, mediaType})
       });
-      const data = await response.json();
-      if(data.error) throw new Error(data.error.message);
-      const text = data.content?.find(c=>c.type==="text")?.text || "";
-      const clean = text.replace(/```json|```/g,"").trim();
-      const parsed = JSON.parse(clean);
+      const result = await response.json();
+      if(!result.ok) throw new Error(result.error || "Chyba serveru");
+      const parsed = result.data;
       setForm(p=>({
         ...p,
         date: parsed.date||p.date,
@@ -283,6 +268,7 @@ Pokud nějakou hodnotu nenajdeš, dej null. Datum ve formátu YYYY-MM-DD. Litry 
       }));
     } catch(e) {
       setScanError("Nepodařilo se přečíst účtenku. Zkus znovu nebo vyplň ručně.");
+      console.error(e);
     }
     setScanLoading(false);
   };
