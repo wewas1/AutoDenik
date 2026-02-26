@@ -189,8 +189,19 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
   const [fFrom,setFFrom] = useState("");
   const [fTo,setFTo] = useState("");
   const [showLocSug,setShowLocSug] = useState(false);
-  const getLastFuel = () => localStorage.getItem("ad_last_fuel")||"Natural 95";
-  const ef = {date:new Date().toISOString().slice(0,10),location:"",fuelType:getLastFuel(),liters:"",pricePerLiter:"",total:"",km:""};
+  const STANDARD_FUELS = ['Natural 95', 'Natural 98', 'Shell V-Power 95', 'Shell V-Power Racing 98', 'OMV MaxMotion 95', 'OMV MaxMotion 100', 'Orlen Verva 95', 'Orlen Verva Racing 100', 'EuroOil Excellium 95', 'MOL Evo 95', 'MOL Evo 100', 'Orlen Effecta 95', 'Globus 95', 'Diesel B7', 'Shell V-Power Diesel', 'OMV MaxMotion Diesel', 'Orlen Verva Diesel', 'EuroOil Excellium Diesel', 'MOL Evo Diesel', 'Orlen Effecta Diesel', 'Globus Diesel', 'LPG', 'CNG', 'Elektřina (AC)', 'Elektřina (DC rychlé)', 'AdBlue', 'Vodík'];
+const getLastFuel = () => {
+  const last = localStorage.getItem("ad_last_fuel")||"Natural 95";
+  // Pokud poslední palivo není ve standardním seznamu, vrátí se jako __custom__
+  return last;
+};
+const getLastFuelForForm = () => {
+  const last = localStorage.getItem("ad_last_fuel")||"Natural 95";
+  if(!STANDARD_FUELS.includes(last)) return {fuelType:"__custom__", customFuel:last};
+  return {fuelType:last, customFuel:""};
+};
+  const lastFuelData = getLastFuelForForm();
+  const ef = {date:new Date().toISOString().slice(0,10),location:"",fuelType:lastFuelData.fuelType,customFuel:lastFuelData.customFuel,liters:"",pricePerLiter:"",total:"",km:""};
   const [form,setForm] = useState(ef);
   const isElectric = form.fuelType?.startsWith("Elektřina");
 
@@ -221,11 +232,12 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
     if(k==="fuelType") localStorage.setItem("ad_last_fuel",v);
     setForm(u);
   };
-  const openNew=()=>{setForm({...ef,fuelType:getLastFuel()});setEditId(null);setShowF(true);};
+  const openNew=()=>{const lfd=getLastFuelForForm();setForm({...ef,fuelType:lfd.fuelType,customFuel:lfd.customFuel});setEditId(null);setShowF(true);};
   const openEdit=f=>{setForm({...f,liters:String(f.liters),pricePerLiter:String(f.pricePerLiter),km:String(f.km)});setEditId(f.id);setShowF(true);};
   const save=async()=>{
     const total=parseFloat(form.liters)*parseFloat(form.pricePerLiter);
     const fuelType = form.fuelType==="__custom__" ? (form.customFuel||"Jiné") : form.fuelType;
+    localStorage.setItem("ad_last_fuel", fuelType); // Ulož skutečný název, ne __custom__
     const rec={...form,fuelType,vid,id:editId||uid(),liters:parseFloat(form.liters),pricePerLiter:parseFloat(form.pricePerLiter),total:isNaN(total)?parseFloat(form.total)||0:total,km:parseInt(form.km)};
     await saveFuel(rec, editId||null);
     setShowF(false);
