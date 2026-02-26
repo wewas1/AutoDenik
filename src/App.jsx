@@ -895,12 +895,13 @@ export default function App() {
       else setAuthError("Chyba při ukládání hesla. Zkus to znovu.");
     }
     else{
-      setAuthMsg("Heslo bylo úspěšně změněno. Můžeš se přihlásit.");
+      setAuthMsg("Heslo bylo úspěšně změněno.");
       setAuthError("");
       setNewPassword("");
       setConfirmPassword("");
-      window.location.hash = "";
-      setTimeout(()=>{setAuthMode("login");setAuthMsg("");},2500);
+      // Odhlásit recovery session, reload bez hashe - pak lze normálně přihlásit
+      await supabase.auth.signOut();
+      setTimeout(()=>{ window.location.replace(window.location.pathname); }, 1500);
     }
   };
 
