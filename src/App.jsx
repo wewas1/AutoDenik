@@ -326,6 +326,31 @@ const getLastFuelForForm = () => {
 
       {showF&&(
         <Modal title={editId?"Upravit tankování":"Nové tankování"} onClose={()=>setShowF(false)}>
+          {/* Scan receipt button - only for new records */}
+          {!editId&&(
+            <div style={{marginBottom:16}}>
+              <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:"var(--s2)",border:"2px dashed var(--b2)",borderRadius:12,padding:"14px 16px",cursor:"pointer",color:"var(--t2)",fontSize:14,fontWeight:500,transition:"border-color .2s",touchAction:"manipulation"}}
+                onMouseEnter={e=>e.currentTarget.style.borderColor="var(--acc)"}
+                onMouseLeave={e=>e.currentTarget.style.borderColor="var(--b2)"}
+              >
+                <input type="file" accept="image/*,application/pdf" capture="environment" style={{display:"none"}}
+                  onChange={e=>{ if(e.target.files[0]) scanReceipt(e.target.files[0]); e.target.value=""; }}
+                />
+                {scanLoading
+                  ? <><span style={{fontSize:20}}>⏳</span> Čtu účtenku...</>
+                  : <><span style={{fontSize:20}}>📷</span> Načíst z účtenky (foto nebo PDF)</>
+                }
+              </label>
+              {/* Also allow choosing from gallery/files without camera */}
+              <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:8,padding:"10px",cursor:"pointer",color:"var(--t3)",fontSize:12,borderRadius:8,border:"1px solid var(--b1)",background:"var(--s2)",touchAction:"manipulation"}}>
+                <input type="file" accept="image/*,application/pdf" style={{display:"none"}}
+                  onChange={e=>{ if(e.target.files[0]) scanReceipt(e.target.files[0]); e.target.value=""; }}
+                />
+                📁 Vybrat ze souborů / galerie
+              </label>
+              {scanError&&<div style={{fontSize:12,color:"var(--red)",marginTop:8,padding:"8px 12px",background:"rgba(224,92,92,.1)",borderRadius:8,border:"1px solid rgba(224,92,92,.2)"}}>{scanError}</div>}
+            </div>
+          )}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <FR label="Datum" half><input type="date" value={form.date} onChange={e=>sf("date",e.target.value)}/></FR>
             <FR label="Stav km" half><input type="number" inputMode="numeric" value={form.km} onChange={e=>sf("km",e.target.value)} placeholder="89500"/></FR>
@@ -716,6 +741,8 @@ export default function App() {
   }); // login | register | reset | newpassword
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [scanLoading, setScanLoading] = useState(false);
+  const [scanError, setScanError] = useState("");
   const [showNewPwd, setShowNewPwd] = useState(false);
   const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [showLoginPwd, setShowLoginPwd] = useState(false);
@@ -919,6 +946,70 @@ export default function App() {
       await supabase.auth.signOut();
       setTimeout(()=>{ window.location.replace(window.location.pathname); }, 1500);
     }
+  };
+
+  const scanReceipt = async(file) => {
+    setScanLoading(true);
+    setScanError("");
+    try {
+      // Convert file to base64
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const isPDF = file.type === "application/pdf";
+      const mediaType = isPDF ? "application/pdf" : file.type || "image/jpeg";
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{
+            role: "user",
+            content: [
+              {
+                type: isPDF ? "document" : "image",
+                source: {type: "base64", media_type: mediaType, data: base64}
+              },
+              {
+                type: "text",
+                text: `Přečti tuto účtenku z čerpací stanice a vrať POUZE JSON objekt bez jakéhokoliv dalšího textu nebo markdown. Formát:
+{"date":"YYYY-MM-DD","location":"název stanice a adresa","fuelType":"typ paliva","liters":číslo,"pricePerLiter":číslo,"total":číslo,"km":null}
+Pokud nějakou hodnotu nenajdeš, dej null. Datum ve formátu YYYY-MM-DD. Litry a ceny jako čísla bez jednotek. Typ paliva česky (Natural 95, Diesel B7, apod.).`
+              }
+            ]
+          }]
+        })
+      });
+
+      const data = await response.json();
+      if(data.error) throw new Error(data.error.message);
+
+      const text = data.content?.find(c=>c.type==="text")?.text || "";
+      const clean = text.replace(/```json|```/g,"").trim();
+      const parsed = JSON.parse(clean);
+
+      // Prefill form with scanned data
+      setForm(p => ({
+        ...p,
+        date: parsed.date || p.date,
+        location: parsed.location || p.location,
+        fuelType: parsed.fuelType || p.fuelType,
+        liters: parsed.liters != null ? String(parsed.liters) : p.liters,
+        pricePerLiter: parsed.pricePerLiter != null ? String(parsed.pricePerLiter) : p.pricePerLiter,
+        total: parsed.total != null ? String(parsed.total) : p.total,
+        km: parsed.km != null ? String(parsed.km) : p.km,
+      }));
+    } catch(e) {
+      setScanError("Nepodařilo se přečíst účtenku. Zkus znovu nebo vyplň ručně.");
+      console.error(e);
+    }
+    setScanLoading(false);
   };
 
   const login = async()=>{
