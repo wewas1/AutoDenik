@@ -189,6 +189,8 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
   const [fFrom,setFFrom] = useState("");
   const [fTo,setFTo] = useState("");
   const [showLocSug,setShowLocSug] = useState(false);
+  const [scanLoading,setScanLoading] = useState(false);
+  const [scanError,setScanError] = useState("");
   const STANDARD_FUELS = ['Natural 95', 'Natural 98', 'Shell V-Power 95', 'Shell V-Power Racing 98', 'OMV MaxMotion 95', 'OMV MaxMotion 100', 'Orlen Verva 95', 'Orlen Verva Racing 100', 'EuroOil Excellium 95', 'MOL Evo 95', 'MOL Evo 100', 'Orlen Effecta 95', 'Globus 95', 'Diesel B7', 'Shell V-Power Diesel', 'OMV MaxMotion Diesel', 'Orlen Verva Diesel', 'EuroOil Excellium Diesel', 'MOL Evo Diesel', 'Orlen Effecta Diesel', 'Globus Diesel', 'LPG', 'CNG', 'Elektřina (AC)', 'Elektřina (DC rychlé)', 'AdBlue', 'Vodík'];
 const getLastFuel = () => {
   const last = localStorage.getItem("ad_last_fuel")||"Natural 95";
@@ -235,6 +237,56 @@ const getLastFuelForForm = () => {
   };
   const openNew=()=>{const lfd=getLastFuelForForm();setForm({...ef,fuelType:lfd.fuelType,customFuel:lfd.customFuel});setEditId(null);setShowF(true);};
   const openEdit=f=>{setForm({...f,liters:String(f.liters),pricePerLiter:String(f.pricePerLiter),km:String(f.km)});setEditId(f.id);setShowF(true);};
+  const scanReceipt = async(file) => {
+    setScanLoading(true);
+    setScanError("");
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const isPDF = file.type === "application/pdf";
+      const mediaType = isPDF ? "application/pdf" : file.type || "image/jpeg";
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{
+            role: "user",
+            content: [
+              {type: isPDF?"document":"image", source:{type:"base64",media_type:mediaType,data:base64}},
+              {type:"text",text:`Přečti tuto účtenku z čerpací stanice a vrať POUZE JSON objekt bez jakéhokoliv dalšího textu nebo markdown. Formát:
+{"date":"YYYY-MM-DD","location":"název stanice a adresa","fuelType":"typ paliva","liters":číslo,"pricePerLiter":číslo,"total":číslo,"km":null}
+Pokud nějakou hodnotu nenajdeš, dej null. Datum ve formátu YYYY-MM-DD. Litry a ceny jako čísla bez jednotek. Typ paliva česky (Natural 95, Diesel B7, apod.).`}
+            ]
+          }]
+        })
+      });
+      const data = await response.json();
+      if(data.error) throw new Error(data.error.message);
+      const text = data.content?.find(c=>c.type==="text")?.text || "";
+      const clean = text.replace(/```json|```/g,"").trim();
+      const parsed = JSON.parse(clean);
+      setForm(p=>({
+        ...p,
+        date: parsed.date||p.date,
+        location: parsed.location||p.location,
+        fuelType: parsed.fuelType||p.fuelType,
+        liters: parsed.liters!=null?String(parsed.liters):p.liters,
+        pricePerLiter: parsed.pricePerLiter!=null?String(parsed.pricePerLiter):p.pricePerLiter,
+        total: parsed.total!=null?String(parsed.total):p.total,
+        km: parsed.km!=null?String(parsed.km):p.km,
+      }));
+    } catch(e) {
+      setScanError("Nepodařilo se přečíst účtenku. Zkus znovu nebo vyplň ručně.");
+    }
+    setScanLoading(false);
+  };
+
   const save=async()=>{
     const total=parseFloat(form.liters)*parseFloat(form.pricePerLiter);
     const fuelType = form.fuelType==="__custom__" ? (form.customFuel||"Jiné") : form.fuelType;
@@ -742,8 +794,7 @@ export default function App() {
   }); // login | register | reset | newpassword
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [scanLoading, setScanLoading] = useState(false);
-  const [scanError, setScanError] = useState("");
+
   const [showNewPwd, setShowNewPwd] = useState(false);
   const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [showLoginPwd, setShowLoginPwd] = useState(false);
@@ -949,69 +1000,7 @@ export default function App() {
     }
   };
 
-  const scanReceipt = async(file) => {
-    setScanLoading(true);
-    setScanError("");
-    try {
-      // Convert file to base64
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(",")[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
 
-      const isPDF = file.type === "application/pdf";
-      const mediaType = isPDF ? "application/pdf" : file.type || "image/jpeg";
-
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{
-            role: "user",
-            content: [
-              {
-                type: isPDF ? "document" : "image",
-                source: {type: "base64", media_type: mediaType, data: base64}
-              },
-              {
-                type: "text",
-                text: `Přečti tuto účtenku z čerpací stanice a vrať POUZE JSON objekt bez jakéhokoliv dalšího textu nebo markdown. Formát:
-{"date":"YYYY-MM-DD","location":"název stanice a adresa","fuelType":"typ paliva","liters":číslo,"pricePerLiter":číslo,"total":číslo,"km":null}
-Pokud nějakou hodnotu nenajdeš, dej null. Datum ve formátu YYYY-MM-DD. Litry a ceny jako čísla bez jednotek. Typ paliva česky (Natural 95, Diesel B7, apod.).`
-              }
-            ]
-          }]
-        })
-      });
-
-      const data = await response.json();
-      if(data.error) throw new Error(data.error.message);
-
-      const text = data.content?.find(c=>c.type==="text")?.text || "";
-      const clean = text.replace(/```json|```/g,"").trim();
-      const parsed = JSON.parse(clean);
-
-      // Prefill form with scanned data
-      setForm(p => ({
-        ...p,
-        date: parsed.date || p.date,
-        location: parsed.location || p.location,
-        fuelType: parsed.fuelType || p.fuelType,
-        liters: parsed.liters != null ? String(parsed.liters) : p.liters,
-        pricePerLiter: parsed.pricePerLiter != null ? String(parsed.pricePerLiter) : p.pricePerLiter,
-        total: parsed.total != null ? String(parsed.total) : p.total,
-        km: parsed.km != null ? String(parsed.km) : p.km,
-      }));
-    } catch(e) {
-      setScanError("Nepodařilo se přečíst účtenku. Zkus znovu nebo vyplň ručně.");
-      console.error(e);
-    }
-    setScanLoading(false);
-  };
 
   const login = async()=>{
     setAuthError("");
