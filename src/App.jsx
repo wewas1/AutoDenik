@@ -751,17 +751,20 @@ export default function App() {
 
   // Auth check on load
   useEffect(()=>{
-    // Zkontroluj hash PŘED načtením session - pokud jde o reset hesla, nezalogovat
     const hash = window.location.hash;
-    const isRecovery = hash.includes("type=recovery") || hash.includes("type=signup");
+    const isRecovery = hash.includes("type=recovery");
     
+    // Globální flag - zabrání přihlášení dokud uživatel nezadá nové heslo
+    let recoveryMode = isRecovery;
+
     if(isRecovery){
-      // Nastav mód nového hesla a smaž hash aby se session nenačetla
       setAuthMode("newpassword");
       setAuthLoading(false);
-      // Nezavolávej getSession - nechceme přihlásit uživatele
+      // Okamžitě odhlásit pokud Supabase již session vytvořil
+      supabase.auth.signOut();
     } else {
       supabase.auth.getSession().then(({data:{session}})=>{
+        if(recoveryMode) return;
         setUser(session?.user ?? null);
         setAuthLoading(false);
       });
@@ -769,16 +772,20 @@ export default function App() {
     
     const {data:{subscription}} = supabase.auth.onAuthStateChange((event,session)=>{
       if(event==="PASSWORD_RECOVERY"){
+        recoveryMode = true;
         setUser(null);
         setAuthMode("newpassword");
+        setAuthLoading(false);
         return;
       }
-      // Pokud přišlo SIGNED_IN ale jsme v recovery okně (hash v URL), ignoruj
-      if(event==="SIGNED_IN" && window.location.hash.includes("access_token")){
+      if(event==="SIGNED_IN" && recoveryMode){
+        // Supabase přihlásil uživatele přes recovery token - okamžitě odhlásit
         supabase.auth.signOut();
         return;
       }
+      if(recoveryMode) return;
       setUser(session?.user ?? null);
+      if(event==="SIGNED_OUT") setAuthLoading(false);
     });
 
     // PWA install prompt
@@ -985,25 +992,33 @@ export default function App() {
             <div style={{fontSize:12,color:"var(--t3)",letterSpacing:".08em"}}>EVIDENCE VOZIDEL</div>
           </div>
           <div style={{background:"var(--s1)",border:"1px solid var(--b1)",borderRadius:20,padding:28}}>
+            {authMode==="newpassword" ? (
+              <div style={{textAlign:"center",marginBottom:20}}>
+                <div style={{fontSize:28,marginBottom:8}}>🔑</div>
+                <h2 style={{fontSize:18,fontWeight:600,marginBottom:4}}>Nastavit nové heslo</h2>
+                <div style={{fontSize:13,color:"var(--t3)"}}>AutoDeník</div>
+              </div>
+            ) : (
             <div style={{display:"flex",gap:0,marginBottom:24,background:"var(--s2)",borderRadius:10,padding:4}}>
               {[["login","Přihlásit se"],["register","Registrovat"]].map(([m,l])=>(
                 <button key={m} onClick={()=>{setAuthMode(m);setAuthError("");setAuthMsg("");}} style={{flex:1,background:authMode===m?"var(--s1)":"none",border:authMode===m?"1px solid var(--b2)":"1px solid transparent",borderRadius:8,padding:"9px",color:authMode===m?"var(--t1)":"var(--t3)",fontSize:13,fontWeight:500,transition:"all .2s",touchAction:"manipulation"}}>{l}</button>
               ))}
             </div>
+            )}
             <div style={{display:"flex",flexDirection:"column",gap:14}}>
-              {authMode!=="reset"&&<div>
+              {authMode!=="reset"&&authMode!=="newpassword"&&<div>
                 <label style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",display:"block",marginBottom:6}}>Email</label>
                 <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="vas@email.cz" onKeyDown={e=>e.key==="Enter"&&(authMode==="login"?login():register())}/>
               </div>}
-              {authMode!=="reset"&&<div>
+              {authMode!=="reset"&&authMode!=="newpassword"&&<div>
                 <label style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",display:"block",marginBottom:6}}>Heslo</label>
                 <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&(authMode==="login"?login():register())}/>
               </div>}
-              {authMode!=="reset"&&authError&&<div style={{fontSize:12,color:"var(--red)",padding:"10px 12px",background:"rgba(224,92,92,.1)",borderRadius:8,border:"1px solid rgba(224,92,92,.2)"}}>{authError}</div>}
-              {authMode!=="reset"&&authMsg&&<div style={{fontSize:12,color:"var(--green)",padding:"10px 12px",background:"rgba(78,203,113,.1)",borderRadius:8,border:"1px solid rgba(78,203,113,.2)"}}>{authMsg}</div>}
-              {authMode!=="reset"&&<Btn onClick={authMode==="login"?login:register} full>{authMode==="login"?"Přihlásit se":"Zaregistrovat"}</Btn>}
+              {authMode!=="reset"&&authMode!=="newpassword"&&authError&&<div style={{fontSize:12,color:"var(--red)",padding:"10px 12px",background:"rgba(224,92,92,.1)",borderRadius:8,border:"1px solid rgba(224,92,92,.2)"}}>{authError}</div>}
+              {authMode!=="reset"&&authMode!=="newpassword"&&authMsg&&<div style={{fontSize:12,color:"var(--green)",padding:"10px 12px",background:"rgba(78,203,113,.1)",borderRadius:8,border:"1px solid rgba(78,203,113,.2)"}}>{authMsg}</div>}
+              {authMode!=="reset"&&authMode!=="newpassword"&&<Btn onClick={authMode==="login"?login:register} full>{authMode==="login"?"Přihlásit se":"Zaregistrovat"}</Btn>}
               {authMode==="login"&&<div style={{fontSize:11,color:"var(--t3)",textAlign:"center"}}>Přihlášení vydrží 60 dní bez nutnosti zadávat heslo znovu</div>}
-              {authMode==="login"&&(
+              {(authMode==="login")&&(
                 <button onClick={()=>{setAuthMode("reset");setAuthError("");setAuthMsg("");}} style={{background:"none",border:"none",color:"var(--t3)",fontSize:12,touchAction:"manipulation",textDecoration:"underline",cursor:"pointer"}}>
                   Zapomenuté heslo?
                 </button>
