@@ -206,7 +206,7 @@ const getLastFuelForForm = () => {
   const [form,setForm] = useState(ef);
   const isElectric = form.fuelType?.startsWith("Elektřina");
 
-  const vd = fueling.filter(f=>f.vid===vid).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const vd = fueling.filter(f=>f.vid===vid).sort((a,b)=>new Date(a.date)-new Date(b.date)||a.km-b.km);
   const enriched = vd.map((f,i)=>{
     const prev = vd[i-1];
     const driven = prev?f.km-prev.km:null;
@@ -448,7 +448,7 @@ const RepMod = ({vid,repairs,saveRepair,delRepair}) => {
     if(fFrom&&r.date<fFrom)return false;
     if(fTo&&r.date>fTo)return false;
     return true;
-  }).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  }).sort((a,b)=>new Date(b.date)-new Date(a.date)||b.km-a.km);
 
   const tMat = filtered.reduce((s,r)=>s+parseFloat(r.matPrice||0),0);
   const tLab = filtered.reduce((s,r)=>s+parseFloat(r.laborPrice||0),0);
