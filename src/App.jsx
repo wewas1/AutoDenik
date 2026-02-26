@@ -197,11 +197,12 @@ const getLastFuel = () => {
 };
 const getLastFuelForForm = () => {
   const last = localStorage.getItem("ad_last_fuel")||"Natural 95";
+  if(last==="__custom__"||last==="") return {fuelType:"Natural 95", customFuel:""};
   if(!STANDARD_FUELS.includes(last)) return {fuelType:"__custom__", customFuel:last};
   return {fuelType:last, customFuel:""};
 };
   const lastFuelData = getLastFuelForForm();
-  const ef = {date:new Date().toISOString().slice(0,10),location:"",fuelType:lastFuelData.fuelType,customFuel:lastFuelData.customFuel,liters:"",pricePerLiter:"",total:"",km:""};
+  const ef = {date:new Date().toISOString().slice(0,10),location:"",fuelType:lastFuelData.fuelType,customFuel:lastFuelData.customFuel==="__custom__"?"":lastFuelData.customFuel,liters:"",pricePerLiter:"",total:"",km:""};
   const [form,setForm] = useState(ef);
   const isElectric = form.fuelType?.startsWith("Elektřina");
 
@@ -367,7 +368,10 @@ const getLastFuelForForm = () => {
               </div>
             </FR>
             <FR label="Typ paliva">
-              <select value={form.fuelType} onChange={e=>{sf("fuelType",e.target.value);if(e.target.value!=="__custom__") sf("customFuel","");}}>
+              <select value={form.fuelType} onChange={e=>{
+                const v=e.target.value;
+                setForm(p=>({...p,fuelType:v,customFuel:v==="__custom__"?p.customFuel:""}));
+              }}>
   {[
     "── Benzín ──────────────",
     "Natural 95",
