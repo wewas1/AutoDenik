@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { createClient } from "@supabase/supabase-js";
@@ -335,18 +335,18 @@ const getLastFuelForForm = () => {
                 </div>
               ) : (
                 <div style={{display:"flex",gap:8}}>
-                  <input ref={scanCamRef} type="file" accept="image/*" capture="environment" style={{display:"none"}}
-                    onChange={e=>{ const f=e.target.files?.[0]; if(f) scanReceipt(f); e.target.value=""; }}
-                  />
-                  <input ref={scanFileRef} type="file" accept="image/*,application/pdf" style={{display:"none"}}
-                    onChange={e=>{ const f=e.target.files?.[0]; if(f) scanReceipt(f); e.target.value=""; }}
-                  />
-                  <button type="button" onClick={()=>scanCamRef.current?.click()} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"var(--s2)",border:"1.5px solid var(--b2)",borderRadius:12,padding:"13px 10px",color:"var(--t2)",fontSize:13,fontWeight:500,touchAction:"manipulation",cursor:"pointer"}}>
-                    <span style={{fontSize:18}}>📷</span> Fotoaparát
-                  </button>
-                  <button type="button" onClick={()=>scanFileRef.current?.click()} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"var(--s2)",border:"1.5px solid var(--b2)",borderRadius:12,padding:"13px 10px",color:"var(--t2)",fontSize:13,fontWeight:500,touchAction:"manipulation",cursor:"pointer"}}>
-                    <span style={{fontSize:18}}>📁</span> Soubor / PDF
-                  </button>
+                  <label style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"var(--s2)",border:"1.5px solid var(--b2)",borderRadius:12,padding:"13px 10px",color:"var(--t2)",fontSize:13,fontWeight:500,touchAction:"manipulation",cursor:"pointer",userSelect:"none"}}>
+                    <input type="file" accept="image/*" style={{position:"absolute",opacity:0,width:0,height:0,overflow:"hidden"}}
+                      onChange={e=>{ const f=e.target.files?.[0]; if(f) scanReceipt(f); e.target.value=""; }}
+                    />
+                    <span style={{fontSize:18}}>📷</span> Foto
+                  </label>
+                  <label style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"var(--s2)",border:"1.5px solid var(--b2)",borderRadius:12,padding:"13px 10px",color:"var(--t2)",fontSize:13,fontWeight:500,touchAction:"manipulation",cursor:"pointer",userSelect:"none"}}>
+                    <input type="file" accept="image/*,application/pdf" style={{position:"absolute",opacity:0,width:0,height:0,overflow:"hidden"}}
+                      onChange={e=>{ const f=e.target.files?.[0]; if(f) scanReceipt(f); e.target.value=""; }}
+                    />
+                    <span style={{fontSize:18}}>📁</span> PDF / Galerie
+                  </label>
                 </div>
               )}
               {scanError&&<div style={{fontSize:12,color:"var(--red)",marginTop:8,padding:"8px 12px",background:"rgba(224,92,92,.1)",borderRadius:8,border:"1px solid rgba(224,92,92,.2)"}}>{scanError}</div>}
@@ -744,8 +744,6 @@ export default function App() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [scanLoading, setScanLoading] = useState(false);
   const [scanError, setScanError] = useState("");
-  const scanCamRef = useRef(null);
-  const scanFileRef = useRef(null);
   const [showNewPwd, setShowNewPwd] = useState(false);
   const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [showLoginPwd, setShowLoginPwd] = useState(false);
