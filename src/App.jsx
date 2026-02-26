@@ -754,17 +754,17 @@ export default function App() {
     const hash = window.location.hash;
     const isRecovery = hash.includes("type=recovery");
     
-    // Globální flag - zabrání přihlášení dokud uživatel nezadá nové heslo
+    // Recovery flag - zobrazí formulář nového hesla, ale NEodhlásí session
+    // Session je potřeba pro updateUser()
     let recoveryMode = isRecovery;
 
     if(isRecovery){
       setAuthMode("newpassword");
       setAuthLoading(false);
-      // Okamžitě odhlásit pokud Supabase již session vytvořil
-      supabase.auth.signOut();
+      // Necháme Supabase zpracovat token a vytvořit session - potřebujeme ji pro updateUser
     } else {
       supabase.auth.getSession().then(({data:{session}})=>{
-        if(recoveryMode) return;
+        if(recoveryMode) return; // Blokuj přihlášení v recovery módu
         setUser(session?.user ?? null);
         setAuthLoading(false);
       });
@@ -773,14 +773,16 @@ export default function App() {
     const {data:{subscription}} = supabase.auth.onAuthStateChange((event,session)=>{
       if(event==="PASSWORD_RECOVERY"){
         recoveryMode = true;
+        // Nezalogovat - jen zobrazit formulář, ale session nechat žít
         setUser(null);
         setAuthMode("newpassword");
         setAuthLoading(false);
         return;
       }
       if(event==="SIGNED_IN" && recoveryMode){
-        // Supabase přihlásil uživatele přes recovery token - okamžitě odhlásit
-        supabase.auth.signOut();
+        // Supabase vytvořil session pro recovery - NEodhlašovat, potřebujeme ji
+        // Jen zajistit že uživatel neuvidí aplikaci
+        setUser(null);
         return;
       }
       if(recoveryMode) return;
@@ -863,7 +865,11 @@ export default function App() {
     if(!newPassword||newPassword.length<6){setAuthError("Heslo musí mít alespoň 6 znaků");return;}
     if(newPassword!==confirmPassword){setAuthError("Hesla se neshodují");return;}
     const {error} = await supabase.auth.updateUser({password: newPassword});
-    if(error){setAuthError("Chyba: "+error.message);}
+    if(error){
+      if(error.message.includes("session")) setAuthError("Platnost odkazu vypršela. Požádej o nový reset hesla.");
+      else if(error.message.includes("weak")) setAuthError("Heslo je příliš slabé. Použij alespoň 6 znaků.");
+      else setAuthError("Chyba při ukládání hesla. Zkus to znovu.");
+    }
     else{
       setAuthMsg("Heslo bylo úspěšně změněno. Můžeš se přihlásit.");
       setAuthError("");
