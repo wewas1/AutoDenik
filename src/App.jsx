@@ -699,6 +699,14 @@ export default function App() {
   }); // login | register | reset | newpassword
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPwd, setShowNewPwd] = useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
+  const [showLoginPwd, setShowLoginPwd] = useState(false);
+  const [showChangePwd, setShowChangePwd] = useState(false);
+  const [changePwdForm, setChangePwdForm] = useState({pwd:"",pwd2:""});
+  const [changePwdErr, setChangePwdErr] = useState("");
+  const [changePwdMsg, setChangePwdMsg] = useState("");
+  const [showChangePwdVis, setShowChangePwdVis] = useState(false);
   const [authError, setAuthError] = useState("");
   const [authMsg, setAuthMsg] = useState("");
   const [pwaPrompt, setPwaPrompt] = useState(null);
@@ -861,6 +869,21 @@ export default function App() {
     else{setAuthMsg("Odkaz na reset hesla byl odeslán na tvůj email.");setAuthError("");}
   };
 
+  const changePassword = async()=>{
+    setChangePwdErr(""); setChangePwdMsg("");
+    if(!changePwdForm.pwd||changePwdForm.pwd.length<6){setChangePwdErr("Heslo musí mít alespoň 6 znaků.");return;}
+    if(changePwdForm.pwd!==changePwdForm.pwd2){setChangePwdErr("Hesla se neshodují.");return;}
+    const {error} = await supabase.auth.updateUser({password:changePwdForm.pwd});
+    if(error){
+      if(error.message.includes("session")) setChangePwdErr("Přihlaš se znovu a zkus to znovu.");
+      else setChangePwdErr("Chyba při změně hesla.");
+    } else {
+      setChangePwdMsg("Heslo bylo úspěšně změněno.");
+      setChangePwdForm({pwd:"",pwd2:""});
+      setTimeout(()=>{setShowChangePwd(false);setChangePwdMsg("");},2000);
+    }
+  };
+
   const handleNewPassword = async()=>{
     if(!newPassword||newPassword.length<6){setAuthError("Heslo musí mít alespoň 6 znaků");return;}
     if(newPassword!==confirmPassword){setAuthError("Hesla se neshodují");return;}
@@ -883,7 +906,14 @@ export default function App() {
   const login = async()=>{
     setAuthError("");
     const {data,error} = await supabase.auth.signInWithPassword({email,password});
-    if(error){ setAuthError(error.message==="Invalid login credentials"?"Špatný email nebo heslo":error.message); return; }
+    if(error){
+      const m=error.message;
+      if(m.includes("Invalid login")||m.includes("invalid login")) setAuthError("Nesprávný email nebo heslo.");
+      else if(m.includes("rate limit")) setAuthError("Příliš mnoho pokusů. Zkus to za hodinu.");
+      else if(m.includes("not confirmed")) setAuthError("Email není potvrzený. Zkontroluj schránku.");
+      else setAuthError("Chyba přihlášení. Zkus to znovu.");
+      return;
+    }
     // session handled by onAuthStateChange
   };
 
@@ -1018,7 +1048,10 @@ export default function App() {
               </div>}
               {authMode!=="reset"&&authMode!=="newpassword"&&<div>
                 <label style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",display:"block",marginBottom:6}}>Heslo</label>
-                <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&(authMode==="login"?login():register())}/>
+                <div style={{position:"relative"}}>
+                  <input type={showLoginPwd?"text":"password"} value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&(authMode==="login"?login():register())} style={{paddingRight:40,width:"100%",boxSizing:"border-box"}}/>
+                  <button type="button" onClick={()=>setShowLoginPwd(p=>!p)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--t3)",cursor:"pointer",fontSize:16,padding:4}}>{showLoginPwd?"🙈":"👁"}</button>
+                </div>
               </div>}
               {authMode!=="reset"&&authMode!=="newpassword"&&authError&&<div style={{fontSize:12,color:"var(--red)",padding:"10px 12px",background:"rgba(224,92,92,.1)",borderRadius:8,border:"1px solid rgba(224,92,92,.2)"}}>{authError}</div>}
               {authMode!=="reset"&&authMode!=="newpassword"&&authMsg&&<div style={{fontSize:12,color:"var(--green)",padding:"10px 12px",background:"rgba(78,203,113,.1)",borderRadius:8,border:"1px solid rgba(78,203,113,.2)"}}>{authMsg}</div>}
@@ -1043,8 +1076,14 @@ export default function App() {
                 <div style={{display:"flex",flexDirection:"column",gap:12}}>
                   <div style={{fontSize:15,fontWeight:600,color:"var(--t1)",textAlign:"center"}}>Nastavit nové heslo</div>
                   <div style={{fontSize:13,color:"var(--t2)",textAlign:"center",lineHeight:1.5}}>Zadej své nové heslo.</div>
-                  <input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="Nové heslo (min. 6 znaků)" onKeyDown={e=>e.key==="Enter"&&handleNewPassword()}/>
-                  <input type="password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} placeholder="Potvrdit heslo" onKeyDown={e=>e.key==="Enter"&&handleNewPassword()}/>
+                  <div style={{position:"relative"}}>
+                    <input type={showNewPwd?"text":"password"} value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="Nové heslo (min. 6 znaků)" onKeyDown={e=>e.key==="Enter"&&handleNewPassword()} style={{paddingRight:40,width:"100%",boxSizing:"border-box"}}/>
+                    <button type="button" onClick={()=>setShowNewPwd(p=>!p)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--t3)",cursor:"pointer",fontSize:16,padding:4}}>{showNewPwd?"🙈":"👁"}</button>
+                  </div>
+                  <div style={{position:"relative"}}>
+                    <input type={showConfirmPwd?"text":"password"} value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} placeholder="Potvrdit heslo" onKeyDown={e=>e.key==="Enter"&&handleNewPassword()} style={{paddingRight:40,width:"100%",boxSizing:"border-box"}}/>
+                    <button type="button" onClick={()=>setShowConfirmPwd(p=>!p)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--t3)",cursor:"pointer",fontSize:16,padding:4}}>{showConfirmPwd?"🙈":"👁"}</button>
+                  </div>
                   {authError&&<div style={{fontSize:12,color:"var(--red)",padding:"8px 12px",background:"rgba(224,92,92,.1)",borderRadius:8}}>{authError}</div>}
                   {authMsg&&<div style={{fontSize:12,color:"var(--green)",padding:"10px 12px",background:"rgba(78,203,113,.1)",borderRadius:8,border:"1px solid rgba(78,203,113,.2)"}}>{authMsg}</div>}
                   <button onClick={handleNewPassword} style={{background:"var(--acc)",border:"none",borderRadius:10,padding:"13px",color:"#0a0a0a",fontSize:15,fontWeight:600,touchAction:"manipulation",cursor:"pointer"}}>Uložit nové heslo</button>
@@ -1228,6 +1267,11 @@ export default function App() {
                 <span style={{fontSize:18}}>🔒</span>
                 Zásady ochrany osobních údajů
               </a>
+              <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",margin:"16px 0 4px"}}>Účet</div>
+              <button onClick={()=>setShowChangePwd(true)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:10,padding:"12px 16px",color:"var(--t2)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10,width:"100%"}}>
+                <span style={{fontSize:18}}>🔑</span>
+                Změnit heslo
+              </button>
               <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--red)",textTransform:"uppercase",margin:"16px 0 4px"}}>Nebezpečná zóna</div>
               <button onClick={()=>{setShowExport(false);deleteAccount();}} style={{background:"rgba(224,92,92,.08)",border:"1px solid rgba(224,92,92,.25)",borderRadius:10,padding:"12px 16px",color:"var(--red)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
@@ -1237,6 +1281,22 @@ export default function App() {
           </div>
         </div>,
         document.body
+      )}
+
+      {showChangePwd&&(
+        <Modal title="Změnit heslo" onClose={()=>{setShowChangePwd(false);setChangePwdErr("");setChangePwdMsg("");setChangePwdForm({pwd:"",pwd2:""});}}>
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div style={{fontSize:13,color:"var(--t2)",lineHeight:1.6}}>Zadej nové heslo pro svůj účet <strong>{user?.email}</strong>.</div>
+            <div style={{position:"relative"}}>
+              <input type={showChangePwdVis?"text":"password"} value={changePwdForm.pwd} onChange={e=>setChangePwdForm(p=>({...p,pwd:e.target.value}))} placeholder="Nové heslo (min. 6 znaků)" style={{paddingRight:40,width:"100%",boxSizing:"border-box"}}/>
+              <button type="button" onClick={()=>setShowChangePwdVis(p=>!p)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--t3)",cursor:"pointer",fontSize:16,padding:4}}>{showChangePwdVis?"🙈":"👁"}</button>
+            </div>
+            <input type={showChangePwdVis?"text":"password"} value={changePwdForm.pwd2} onChange={e=>setChangePwdForm(p=>({...p,pwd2:e.target.value}))} placeholder="Potvrdit heslo" onKeyDown={e=>e.key==="Enter"&&changePassword()}/>
+            {changePwdErr&&<div style={{fontSize:12,color:"var(--red)",padding:"10px 12px",background:"rgba(224,92,92,.1)",borderRadius:8,border:"1px solid rgba(224,92,92,.2)"}}>{changePwdErr}</div>}
+            {changePwdMsg&&<div style={{fontSize:12,color:"var(--green)",padding:"10px 12px",background:"rgba(78,203,113,.1)",borderRadius:8,border:"1px solid rgba(78,203,113,.2)"}}>{changePwdMsg}</div>}
+            <Btn onClick={changePassword} full>Uložit nové heslo</Btn>
+          </div>
+        </Modal>
       )}
 
       {/* Update notification - informational toast, auto-dismiss */}
