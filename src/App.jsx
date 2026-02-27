@@ -250,7 +250,11 @@ const getLastFuelForForm = () => {
       const mediaType = file.type || "image/jpeg";
       const response = await fetch(`${SUPA_URL}/functions/v1/scan-receipt`, {
         method: "POST",
-        headers: {"Content-Type": "application/json", "apikey": SUPA_KEY},
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPA_KEY,
+          "Authorization": `Bearer ${SUPA_KEY}`,
+        },
         body: JSON.stringify({imageBase64: base64, mediaType})
       });
       const result = await response.json();
