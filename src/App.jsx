@@ -241,13 +241,24 @@ const getLastFuelForForm = () => {
     setScanLoading(true);
     setScanError("");
     try {
+      // Zmenši obrázek před odesláním
       const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(",")[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          const MAX = 1024;
+          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.85).split(",")[1]);
+        };
+        img.onerror = reject;
+        img.src = url;
       });
-      const mediaType = file.type || "image/jpeg";
+      const mediaType = "image/jpeg";
       const response = await fetch(`${SUPA_URL}/functions/v1/scan-receipt`, {
         method: "POST",
         headers: {
