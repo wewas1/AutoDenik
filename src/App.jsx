@@ -243,7 +243,8 @@ const getLastFuelForForm = () => {
     try {
       // Zmenši obrázek na max 800px
       let uploadFile = file;
-      if (!file.type.includes("pdf")) {
+      const isPDF = file.type === "application/pdf" || file.name?.toLowerCase().endsWith(".pdf");
+      if (!isPDF) {
         try {
           uploadFile = await new Promise((resolve) => {
             const img = new Image();
@@ -275,11 +276,43 @@ const getLastFuelForForm = () => {
       const result = await response.json();
       if(!result.ok) throw new Error(result.error || "Chyba serveru");
       const parsed = result.data;
+      // Mapování paliva z Gemini výstupu na přesný název ze seznamu
+      const mapFuel = (raw) => {
+        if(!raw) return null;
+        const r = raw.toLowerCase();
+        if(r.includes("verva diesel")||r.includes("verva die")) return "Orlen Verva Diesel";
+        if(r.includes("verva 95")||r.includes("verva 9")) return "Orlen Verva 95";
+        if(r.includes("verva 100")||r.includes("verva rac")) return "Orlen Verva Racing 100";
+        if(r.includes("effecta diesel")) return "Orlen Effecta Diesel";
+        if(r.includes("effecta")) return "Orlen Effecta 95";
+        if(r.includes("v-power diesel")||r.includes("vpower diesel")) return "Shell V-Power Diesel";
+        if(r.includes("v-power racing")||r.includes("vpower racing")) return "Shell V-Power Racing 98";
+        if(r.includes("v-power")||r.includes("vpower")) return "Shell V-Power 95";
+        if(r.includes("maxmotion diesel")||r.includes("max motion diesel")) return "OMV MaxMotion Diesel";
+        if(r.includes("maxmotion 100")||r.includes("max motion 100")) return "OMV MaxMotion 100";
+        if(r.includes("maxmotion")||r.includes("max motion")) return "OMV MaxMotion 95";
+        if(r.includes("excellium diesel")) return "EuroOil Excellium Diesel";
+        if(r.includes("excellium")) return "EuroOil Excellium 95";
+        if(r.includes("evo diesel")) return "MOL Evo Diesel";
+        if(r.includes("evo 100")) return "MOL Evo 100";
+        if(r.includes("evo")) return "MOL Evo 95";
+        if(r.includes("q max diesel")||r.includes("qmax diesel")) return "Orlen Verva Diesel";
+        if(r.includes("eurodiesel")) return "Diesel B7";
+        if(r.includes("diesel")) return "Diesel B7";
+        if(r.includes("natural 98")||r.includes("95 e10")||r.includes("98")) return "Natural 98";
+        if(r.includes("natural")||r.includes("95")||r.includes("benzin")) return "Natural 95";
+        if(r.includes("lpg")) return "LPG";
+        if(r.includes("cng")) return "CNG";
+        if(r.includes("elektř")||r.includes("elektri")||r.includes("ac)")) return "Elektřina (AC)";
+        if(r.includes("dc")) return "Elektřina (DC rychlé)";
+        return raw; // ponech originál pokud nenajde shodu
+      };
+      const mappedFuel = mapFuel(parsed.fuelType);
       setForm(p=>({
         ...p,
         date: parsed.date||p.date,
         location: parsed.location||p.location,
-        fuelType: parsed.fuelType||p.fuelType,
+        fuelType: mappedFuel||p.fuelType,
         liters: parsed.liters!=null?String(parsed.liters):p.liters,
         pricePerLiter: parsed.pricePerLiter!=null?String(parsed.pricePerLiter):p.pricePerLiter,
         total: parsed.total!=null?String(parsed.total):p.total,
