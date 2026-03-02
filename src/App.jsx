@@ -241,15 +241,29 @@ const getLastFuelForForm = () => {
     setScanLoading(true);
     setScanError("");
     try {
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(",")[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const mediaType = file.type || "image/jpeg";
+      // Zmenši obrázek na max 800px
+      let uploadFile = file;
+      if (!file.type.includes("pdf")) {
+        try {
+          uploadFile = await new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              const MAX = 800;
+              const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+              const w = Math.round(img.width * scale);
+              const h = Math.round(img.height * scale);
+              const canvas = document.createElement("canvas");
+              canvas.width = w; canvas.height = h;
+              canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+              canvas.toBlob(b => resolve(b || file), "image/jpeg", 0.7);
+            };
+            img.onerror = () => resolve(file);
+            img.src = URL.createObjectURL(file);
+          });
+        } catch(e) { uploadFile = file; }
+      }
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", uploadFile, "receipt.jpg");
       const response = await fetch(`${SUPA_URL}/functions/v1/scan-receipt`, {
         method: "POST",
         headers: {
