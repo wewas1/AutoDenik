@@ -308,13 +308,17 @@ const getLastFuelForForm = () => {
         return raw; // ponech originál pokud nenajde shodu
       };
       const mappedFuel = mapFuel(parsed.fuelType);
+      // Cena za litr = total / litry (po slevách)
+      const computedPPL = (parsed.total != null && parsed.liters != null && parsed.liters > 0)
+        ? Math.round((parsed.total / parsed.liters) * 100) / 100
+        : parsed.pricePerLiter;
       setForm(p=>({
         ...p,
         date: parsed.date||p.date,
         location: parsed.location||p.location,
         fuelType: mappedFuel||p.fuelType,
         liters: parsed.liters!=null?String(parsed.liters):p.liters,
-        pricePerLiter: parsed.pricePerLiter!=null?String(parsed.pricePerLiter):p.pricePerLiter,
+        pricePerLiter: computedPPL!=null?String(computedPPL):p.pricePerLiter,
         total: parsed.total!=null?String(parsed.total):p.total,
         km: parsed.km!=null?String(parsed.km):p.km,
       }));
