@@ -183,7 +183,7 @@ const DF = ({from,to,onFrom,onTo}) => (
 );
 
 // ── FUELING ───────────────────────────────────────────────────────────────────
-const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
+const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone}) => {
   const [showF,setShowF] = useState(false);
   const [editId,setEditId] = useState(null);
   const [fFrom,setFFrom] = useState("");
@@ -191,6 +191,33 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel}) => {
   const [showLocSug,setShowLocSug] = useState(false);
   const [scanLoading,setScanLoading] = useState(false);
   const [scanError,setScanError] = useState("");
+
+  // Zpracuj sdílený soubor z Orlen aplikace
+  useEffect(()=>{
+    if(!sharedReceipt || !vid) return;
+    const processShared = async()=>{
+      try {
+        // Stáhni soubor ze Supabase Storage
+        const { data, error } = await supabase.storage
+          .from("temp-receipts")
+          .download(sharedReceipt);
+        if(error) throw error;
+        // Otevři formulář a skenuj
+        const lfd = getLastFuelForForm();
+        setForm({...ef, fuelType:lfd.fuelType, customFuel:lfd.customFuel});
+        setEditId(null);
+        setShowF(true);
+        await scanReceipt(data);
+        // Smaž dočasný soubor
+        await supabase.storage.from("temp-receipts").remove([sharedReceipt]);
+        onSharedReceiptDone?.();
+      } catch(e) {
+        console.error("Shared receipt error:", e);
+        onSharedReceiptDone?.();
+      }
+    };
+    processShared();
+  }, [sharedReceipt, vid]);
   const STANDARD_FUELS = ['Natural 95', 'Natural 98', 'Shell V-Power 95', 'Shell V-Power Racing 98', 'OMV MaxMotion 95', 'OMV MaxMotion 100', 'Orlen Verva 95', 'Orlen Verva Racing 100', 'EuroOil Excellium 95', 'MOL Evo 95', 'MOL Evo 100', 'Orlen Effecta 95', 'Globus 95', 'Diesel B7', 'Shell V-Power Diesel', 'OMV MaxMotion Diesel', 'Orlen Verva Diesel', 'EuroOil Excellium Diesel', 'MOL Evo Diesel', 'Orlen Effecta Diesel', 'Globus Diesel', 'LPG', 'CNG', 'Elektřina (AC)', 'Elektřina (DC rychlé)', 'AdBlue', 'Vodík'];
 const getLastFuel = () => {
   const last = localStorage.getItem("ad_last_fuel")||"Natural 95";
@@ -846,6 +873,7 @@ export default function App() {
   const [pwaPrompt, setPwaPrompt] = useState(null);
   const [showPwaInstall, setShowPwaInstall] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
+  const [sharedReceipt, setSharedReceipt] = useState(null);
 
   const [vehicles, setVehicles] = useState([]);
   const [fueling, setFueling] = useState([]);
@@ -892,15 +920,13 @@ export default function App() {
   const [editV, setEditV] = useState(null);
 
   // Auth check on load
-  // Handle PWA Share Target
+  // Handle PWA Share Target - zpracuj sdílený soubor z URL parametru
   useEffect(()=>{
-    if(window.location.pathname === "/share-target"){
+    const params = new URLSearchParams(window.location.search);
+    const receiptFile = params.get("receipt");
+    if(receiptFile){
       window.history.replaceState({}, "", "/");
-      // Otevři formulář tankování po přihlášení
-      const checkAndOpen = setInterval(()=>{
-        if(document.querySelector("[data-share-pending]")) return;
-        clearInterval(checkAndOpen);
-      }, 500);
+      setSharedReceipt(receiptFile);
     }
   }, []);
 
@@ -1368,7 +1394,7 @@ export default function App() {
                 ))}
               </div>
 
-              {tab==="fueling"&&<FuelMod vid={activeVid} fueling={fueling} saveFuel={saveFuel} delFuel={delFuel}/>}
+              {tab==="fueling"&&<FuelMod vid={activeVid} fueling={fueling} saveFuel={saveFuel} delFuel={delFuel} sharedReceipt={sharedReceipt} onSharedReceiptDone={()=>setSharedReceipt(null)}/>}
               {tab==="repairs"&&<RepMod vid={activeVid} repairs={repairs} saveRepair={saveRepair} delRepair={delRepair}/>}
               {tab==="addons"&&<AddMod vid={activeVid} addons={addons} saveAddon={saveAddon} delAddon={delAddon}/>}
             </>
