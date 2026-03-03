@@ -1,6 +1,11 @@
 {
   "rewrites": [
     { "source": "/privacy", "destination": "/privacy.html" },
-    { "source": "/((?!privacy).*)", "destination": "/index.html" }
-  ]
+    { "source": "/((?!privacy|api).*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/share-target.js": {
+      "runtime": "nodejs20.x"
+    }
+  }
 }
