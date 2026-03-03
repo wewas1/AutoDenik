@@ -892,6 +892,18 @@ export default function App() {
   const [editV, setEditV] = useState(null);
 
   // Auth check on load
+  // Handle PWA Share Target
+  useEffect(()=>{
+    if(window.location.pathname === "/share-target"){
+      window.history.replaceState({}, "", "/");
+      // Otevři formulář tankování po přihlášení
+      const checkAndOpen = setInterval(()=>{
+        if(document.querySelector("[data-share-pending]")) return;
+        clearInterval(checkAndOpen);
+      }, 500);
+    }
+  }, []);
+
   useEffect(()=>{
     const hash = window.location.hash;
     const isRecovery = hash.includes("type=recovery");
