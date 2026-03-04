@@ -216,7 +216,7 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone
       }
     };
     processShared();
-  }, [sharedReceipt, vid]);
+  }, [sharedReceipt, vid, user]);
   const STANDARD_FUELS = ['Natural 95', 'Natural 98', 'Shell V-Power 95', 'Shell V-Power Racing 98', 'OMV MaxMotion 95', 'OMV MaxMotion 100', 'Orlen Verva 95', 'Orlen Verva Racing 100', 'EuroOil Excellium 95', 'MOL Evo 95', 'MOL Evo 100', 'Orlen Effecta 95', 'Globus 95', 'Diesel B7', 'Shell V-Power Diesel', 'OMV MaxMotion Diesel', 'Orlen Verva Diesel', 'EuroOil Excellium Diesel', 'MOL Evo Diesel', 'Orlen Effecta Diesel', 'Globus Diesel', 'LPG', 'CNG', 'Elektřina (AC)', 'Elektřina (DC rychlé)', 'AdBlue', 'Vodík'];
 const getLastFuel = () => {
   const last = localStorage.getItem("ad_last_fuel")||"Natural 95";
@@ -924,7 +924,6 @@ export default function App() {
     const search = window.location.search;
     const params = new URLSearchParams(search);
     const receiptFile = params.get("receipt");
-    const err = params.get("err");
     if(search) localStorage.setItem("ad_last_url", search + " @ " + new Date().toISOString());
     if(receiptFile){
       window.history.replaceState({}, "", "/");
@@ -932,6 +931,13 @@ export default function App() {
       setTab("fueling");
     }
   }, []);
+
+  // Když jsou vozidla načtená a čeká sdílený soubor, přepni na správné vozidlo
+  useEffect(()=>{
+    if(!sharedReceipt || !vehicles.length) return;
+    setTab("fueling");
+    if(!activeVid) setActiveVid(vehicles[0].id);
+  }, [sharedReceipt, vehicles, activeVid]);
 
   useEffect(()=>{
     const hash = window.location.hash;
