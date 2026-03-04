@@ -1440,6 +1440,10 @@ export default function App() {
               <button onClick={()=>exportJSON({vehicles,fueling,repairs,addons,exportDate:new Date().toISOString()},"autodenik-zaloha.json")} style={{background:"var(--s2)",border:"1px solid var(--acc)",borderRadius:10,padding:"12px 16px",color:"var(--acc)",fontSize:14,fontWeight:500,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
                 <span style={{fontSize:20}}>💾</span> Kompletní záloha (.json)
               </button>
+              <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",margin:"16px 0 4px"}}>Debug</div>
+              <div style={{fontSize:11,color:"var(--t3)",padding:"8px 12px",background:"var(--s2)",borderRadius:8,wordBreak:"break-all",userSelect:"all"}}>
+                {localStorage.getItem("ad_last_url")||"Žádná URL"}
+              </div>
               <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",margin:"16px 0 4px"}}>Informace</div>
               <a href="/privacy" target="_blank" style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:10,padding:"12px 16px",color:"var(--t2)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10,textDecoration:"none"}}>
                 <span style={{fontSize:18}}>🔒</span>
