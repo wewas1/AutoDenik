@@ -195,31 +195,29 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone
   // Zpracuj sdílený soubor z Orlen aplikace
   useEffect(()=>{
     if(!sharedReceipt || !vid) return;
+    localStorage.setItem("ad_last_url", "PROC:sr="+sharedReceipt+" vid="+vid+" @ "+new Date().toISOString());
     const processShared = async()=>{
       try {
+        localStorage.setItem("ad_last_url", "DOWNLOAD:"+sharedReceipt);
         const { data, error } = await supabase.storage
           .from("temp-receipts")
           .download(sharedReceipt);
-        if(error) throw error;
-        // Převeď Blob na File objekt
+        if(error) throw new Error("DL:"+error.message);
+        localStorage.setItem("ad_last_url", "OPENING_FORM");
         const ext = sharedReceipt.endsWith(".pdf") ? ".pdf" : ".jpg";
         const mime = ext === ".pdf" ? "application/pdf" : "image/jpeg";
         const file = new File([data], "receipt" + ext, { type: mime });
-        // Otevři formulář
         const lfd = getLastFuelForForm();
         setForm({...ef, fuelType:lfd.fuelType, customFuel:lfd.customFuel});
         setEditId(null);
         setShowF(true);
-        // Označ že zpracování začalo - odstraň z localStorage
-        localStorage.removeItem("ad_pending_receipt");
+        localStorage.setItem("ad_last_url", "FORM_OPEN_SCANNING");
         await new Promise(r => setTimeout(r, 200));
-        // Skenuj
         await scanReceipt(file);
-        // Smaž z Storage
+        localStorage.setItem("ad_last_url", "SCAN_DONE");
         await supabase.storage.from("temp-receipts").remove([sharedReceipt]).catch(()=>{});
       } catch(e) {
-        console.error("Shared receipt error:", e.message);
-        localStorage.removeItem("ad_pending_receipt");
+        localStorage.setItem("ad_last_url", "ERR:"+e.message);
       }
     };
     processShared();
