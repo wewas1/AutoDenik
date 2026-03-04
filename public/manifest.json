@@ -12,19 +12,12 @@
     { "src": "/logo.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
   ],
   "share_target": {
-    "action": "/api/share-target",
-    "method": "POST",
-    "enctype": "multipart/form-data",
+    "action": "/?share=1",
+    "method": "GET",
     "params": {
       "title": "title",
       "text": "text",
-      "url": "url",
-      "files": [
-        {
-          "name": "file",
-          "accept": ["image/*", "application/pdf"]
-        }
-      ]
+      "url": "url"
     }
   }
 }
