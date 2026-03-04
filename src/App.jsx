@@ -1453,6 +1453,7 @@ export default function App() {
               <div style={{fontSize:11,color:"var(--t3)",padding:"8px 12px",background:"var(--s2)",borderRadius:8,wordBreak:"break-all",userSelect:"all"}}>
                 URL: {localStorage.getItem("ad_last_url")||"Žádná URL"}<br/>
                 sharedReceipt: {sharedReceipt||"null"}<br/>
+                sessionPending: {sessionStorage.getItem("ad_pending_receipt")||"null"}<br/>
                 activeVid: {activeVid||"null"}<br/>
                 tab: {tab}<br/>
                 vehicles: {vehicles.length}
