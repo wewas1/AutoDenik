@@ -872,7 +872,15 @@ export default function App() {
   const [pwaPrompt, setPwaPrompt] = useState(null);
   const [showPwaInstall, setShowPwaInstall] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
-  const [sharedReceipt, setSharedReceipt] = useState(null);
+  const [sharedReceipt, setSharedReceipt] = useState(()=>{
+    const params = new URLSearchParams(window.location.search);
+    const r = params.get("receipt");
+    if(r) {
+      localStorage.setItem("ad_last_url", "?receipt="+r+" @ "+new Date().toISOString());
+      window.history.replaceState({}, "", "/");
+    }
+    return r || localStorage.getItem("ad_pending_receipt") || null;
+  });
 
   const [vehicles, setVehicles] = useState([]);
   const [fueling, setFueling] = useState([]);
