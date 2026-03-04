@@ -921,9 +921,11 @@ export default function App() {
   // Auth check on load
   // Handle PWA Share Target - zpracuj sdílený soubor z URL parametru
   useEffect(()=>{
-    const params = new URLSearchParams(window.location.search);
+    const search = window.location.search;
+    const params = new URLSearchParams(search);
     const receiptFile = params.get("receipt");
-
+    const err = params.get("err");
+    if(search) localStorage.setItem("ad_last_url", search + " @ " + new Date().toISOString());
     if(receiptFile){
       window.history.replaceState({}, "", "/");
       setSharedReceipt(receiptFile);
