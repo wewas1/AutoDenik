@@ -216,7 +216,7 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone
       }
     };
     processShared();
-  }, [sharedReceipt, vid, user]);
+  }, [sharedReceipt, vid]);
   const STANDARD_FUELS = ['Natural 95', 'Natural 98', 'Shell V-Power 95', 'Shell V-Power Racing 98', 'OMV MaxMotion 95', 'OMV MaxMotion 100', 'Orlen Verva 95', 'Orlen Verva Racing 100', 'EuroOil Excellium 95', 'MOL Evo 95', 'MOL Evo 100', 'Orlen Effecta 95', 'Globus 95', 'Diesel B7', 'Shell V-Power Diesel', 'OMV MaxMotion Diesel', 'Orlen Verva Diesel', 'EuroOil Excellium Diesel', 'MOL Evo Diesel', 'Orlen Effecta Diesel', 'Globus Diesel', 'LPG', 'CNG', 'Elektřina (AC)', 'Elektřina (DC rychlé)', 'AdBlue', 'Vodík'];
 const getLastFuel = () => {
   const last = localStorage.getItem("ad_last_fuel")||"Natural 95";
