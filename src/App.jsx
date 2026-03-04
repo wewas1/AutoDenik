@@ -926,18 +926,21 @@ export default function App() {
     const receiptFile = params.get("receipt");
     if(search) localStorage.setItem("ad_last_url", search + " @ " + new Date().toISOString());
     if(receiptFile){
+      // Ulož do sessionStorage před replaceState
+      sessionStorage.setItem("ad_pending_receipt", receiptFile);
       window.history.replaceState({}, "", "/");
-      setSharedReceipt(receiptFile);
-      setTab("fueling");
     }
   }, []);
 
-  // Když jsou vozidla načtená a čeká sdílený soubor, přepni na správné vozidlo
+  // Zpracuj pending receipt ze sessionStorage jakmile jsou vozidla načtena
   useEffect(()=>{
-    if(!sharedReceipt || !vehicles.length) return;
+    if(!vehicles.length || !activeVid) return;
+    const pending = sessionStorage.getItem("ad_pending_receipt");
+    if(!pending) return;
+    sessionStorage.removeItem("ad_pending_receipt");
+    setSharedReceipt(pending);
     setTab("fueling");
-    if(!activeVid) setActiveVid(vehicles[0].id);
-  }, [sharedReceipt, vehicles, activeVid]);
+  }, [vehicles, activeVid]);
 
   useEffect(()=>{
     const hash = window.location.hash;
