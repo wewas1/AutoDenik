@@ -15,57 +15,90 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_KEY
     );
 
-    // Přečti raw body jako ArrayBuffer
+    // Přečti raw body
     const chunks = [];
     for await (const chunk of req) {
-      chunks.push(chunk);
+      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
     }
     const buffer = Buffer.concat(chunks);
-
-    // Najdi boundary z Content-Type
-    const contentType = req.headers['content-type'] || '';
-    const boundaryMatch = contentType.match(/boundary=(.+)$/);
-    if (!boundaryMatch) throw new Error('No boundary');
-    const boundary = boundaryMatch[1];
-
-    // Jednoduché parsování multipart
-    const bodyStr = buffer.toString('binary');
-    const parts = bodyStr.split('--' + boundary);
     
+    console.log('Body size:', buffer.length);
+    console.log('Content-Type:', req.headers['content-type']);
+
+    const contentType = req.headers['content-type'] || '';
+    const boundaryMatch = contentType.match(/boundary=["']?([^"';\s]+)["']?/);
+    
+    if (!boundaryMatch) {
+      console.log('No boundary found');
+      return res.redirect(302, '/?err=noboundary');
+    }
+    
+    const boundary = boundaryMatch[1];
+    console.log('Boundary:', boundary);
+
+    // Parsuj multipart manuálně pomocí Buffer
+    const boundaryBuf = Buffer.from('--' + boundary);
+    const parts = [];
+    let start = 0;
+    
+    while (start < buffer.length) {
+      const idx = buffer.indexOf(boundaryBuf, start);
+      if (idx === -1) break;
+      const partStart = idx + boundaryBuf.length + 2; // skip \r\n
+      const nextIdx = buffer.indexOf(boundaryBuf, partStart);
+      if (nextIdx === -1) break;
+      parts.push(buffer.slice(partStart, nextIdx - 2)); // trim \r\n
+      start = nextIdx;
+    }
+
+    console.log('Parts found:', parts.length);
+
     let fileBuffer = null;
     let fileName = 'receipt.jpg';
     let mimeType = 'image/jpeg';
 
     for (const part of parts) {
-      if (part.includes('Content-Disposition') && part.includes('filename=')) {
-        const nameMatch = part.match(/filename="([^"]+)"/);
+      const headerEnd = part.indexOf('\r\n\r\n');
+      if (headerEnd === -1) continue;
+      const headers = part.slice(0, headerEnd).toString();
+      const body = part.slice(headerEnd + 4);
+      
+      console.log('Part headers:', headers.slice(0, 100));
+      
+      if (headers.includes('filename=')) {
+        const nameMatch = headers.match(/filename="([^"]+)"/);
         if (nameMatch) fileName = nameMatch[1];
-        const mimeMatch = part.match(/Content-Type: ([^\r\n]+)/);
+        const mimeMatch = headers.match(/Content-Type:\s*([^\r\n]+)/i);
         if (mimeMatch) mimeType = mimeMatch[1].trim();
-        // Obsah souboru je za prázdným řádkem
-        const dataStart = part.indexOf('\r\n\r\n') + 4;
-        const dataEnd = part.lastIndexOf('\r\n');
-        if (dataStart > 4 && dataEnd > dataStart) {
-          fileBuffer = Buffer.from(part.slice(dataStart, dataEnd), 'binary');
-        }
+        fileBuffer = body;
+        console.log('File found:', fileName, mimeType, body.length);
+        break;
       }
     }
 
-    if (!fileBuffer) throw new Error('No file found');
+    if (!fileBuffer || fileBuffer.length === 0) {
+      console.log('No file buffer');
+      return res.redirect(302, '/?err=nofile');
+    }
 
     const fileId = Math.random().toString(36).slice(2, 10);
-    const ext = fileName.endsWith('.pdf') ? '.pdf' : '.jpg';
+    const ext = fileName.toLowerCase().endsWith('.pdf') ? '.pdf' : '.jpg';
     const path = `${fileId}${ext}`;
 
     const { error } = await supabase.storage
       .from('temp-receipts')
       .upload(path, fileBuffer, { contentType: mimeType, upsert: true });
 
-    if (error) throw error;
+    if (error) {
+      console.log('Upload error:', error.message);
+      return res.redirect(302, '/?err=upload');
+    }
 
+    console.log('Uploaded:', path);
     return res.redirect(302, `/?receipt=${path}`);
+    
   } catch (e) {
     console.error('share-target error:', e.message);
-    return res.redirect(302, '/');
+    return res.redirect(302, '/?err=' + encodeURIComponent(e.message));
   }
 }
