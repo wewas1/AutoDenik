@@ -210,15 +210,16 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone
         setForm({...ef, fuelType:lfd.fuelType, customFuel:lfd.customFuel});
         setEditId(null);
         setShowF(true);
+        // Označ že zpracování začalo - odstraň z localStorage
+        localStorage.removeItem("ad_pending_receipt");
         await new Promise(r => setTimeout(r, 200));
         // Skenuj
         await scanReceipt(file);
         // Smaž z Storage
-        await supabase.storage.from("temp-receipts").remove([sharedReceipt]);
-        // NEVOLÁME onSharedReceiptDone - necháme formulář otevřený
+        await supabase.storage.from("temp-receipts").remove([sharedReceipt]).catch(()=>{});
       } catch(e) {
         console.error("Shared receipt error:", e.message);
-        // I při chybě nech formulář otevřený
+        localStorage.removeItem("ad_pending_receipt");
       }
     };
     processShared();
@@ -1027,9 +1028,9 @@ export default function App() {
     // Zpracuj sdílený soubor po načtení dat
     const pendingReceipt = localStorage.getItem("ad_pending_receipt");
     if(pendingReceipt) {
-      localStorage.removeItem("ad_pending_receipt");
       setSharedReceipt(pendingReceipt);
       setTab("fueling");
+      // NEODSTRAŇUJEME z localStorage zde - FuelMod to udělá po zpracování
     }
   };
 
