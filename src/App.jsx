@@ -215,11 +215,10 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone
         await scanReceipt(file);
         // Smaž z Storage
         await supabase.storage.from("temp-receipts").remove([sharedReceipt]);
-        onSharedReceiptDone?.();
+        // NEVOLÁME onSharedReceiptDone - necháme formulář otevřený
       } catch(e) {
         console.error("Shared receipt error:", e.message);
         // I při chybě nech formulář otevřený
-        onSharedReceiptDone?.();
       }
     };
     processShared();
