@@ -925,9 +925,17 @@ export default function App() {
   },[theme]);
   const [editV, setEditV] = useState(null);
 
-  // Handle PWA Share Target - nastav tab když je sharedReceipt
+  // Handle PWA Share Target - přijmi zprávu ze Service Workeru
   useEffect(()=>{
-    if(sharedReceipt) setTab("fueling");
+    const handler = (e) => {
+      if(e.data?.type === "RECEIPT" && e.data?.receipt) {
+        localStorage.setItem("ad_last_url", "SW:" + e.data.receipt + " @ " + new Date().toISOString());
+        setSharedReceipt(e.data.receipt);
+        setTab("fueling");
+      }
+    };
+    navigator.serviceWorker?.addEventListener("message", handler);
+    return () => navigator.serviceWorker?.removeEventListener("message", handler);
   }, []);
 
   useEffect(()=>{
