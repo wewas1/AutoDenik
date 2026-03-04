@@ -1,9 +1,21 @@
-// Service Worker - AutoDeník
 const CACHE_NAME = 'autodenik-v3';
 
-self.addEventListener('install', e => {
-  self.skipWaiting();
-});
+// Jednoduchá IDB helper
+function idbSet(key, value) {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('autodenik-sw', 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore('kv');
+    req.onsuccess = e => {
+      const tx = e.target.result.transaction('kv', 'readwrite');
+      tx.objectStore('kv').put(value, key);
+      tx.oncomplete = resolve;
+      tx.onerror = reject;
+    };
+    req.onerror = reject;
+  });
+}
+
+self.addEventListener('install', e => { self.skipWaiting(); });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
@@ -13,52 +25,36 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Zachyť share target POST request
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Zachyť odpověď z /api/share-target a předej receipt do PWA
   if (url.pathname === '/api/share-target' && e.request.method === 'POST') {
     e.respondWith(
-      fetch(e.request).then(async response => {
-        // Přečti text odpovědi
-        const text = await response.text();
-        // Najdi receipt v HTML nebo redirect URL
-        const match = text.match(/receipt[=']([a-z0-9]+\.(pdf|jpg))/i);
+      fetch(e.request.clone()).then(async response => {
+        const text = await response.clone().text();
+        const match = text.match(/receipt[='"]([a-z0-9]+\.(pdf|jpg))/i);
         if (match) {
-          const receipt = match[1];
-          // Pošli receipt všem otevřeným oknům PWA
-          const clients = await self.clients.matchAll({ type: 'window' });
-          if (clients.length > 0) {
-            clients.forEach(client => client.postMessage({ type: 'RECEIPT', receipt }));
-          } else {
-            // Žádné okno není otevřené - ulož do IDB
-            // Použijeme jednoduchý workaround přes URL
-          }
+          await idbSet('pending_receipt', match[1]);
+          // Pošli zprávu všem klientům
+          const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+          clients.forEach(c => c.postMessage({ type: 'RECEIPT', receipt: match[1] }));
         }
-        // Vrať redirect na hlavní stránku
-        return Response.redirect('/?sw=1', 302);
+        return Response.redirect('/', 302);
       }).catch(() => Response.redirect('/', 302))
     );
     return;
   }
 
-  // Pro navigaci vždy fetch ze sítě
   if (e.request.mode === 'navigate') {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
-    );
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
     return;
   }
 
-  // Pro ostatní assets - network first
   e.respondWith(
-    fetch(e.request)
-      .then(res => {
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
-        return res;
-      })
-      .catch(() => caches.match(e.request))
+    fetch(e.request).then(res => {
+      const clone = res.clone();
+      caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+      return res;
+    }).catch(() => caches.match(e.request))
   );
 });
