@@ -927,7 +927,7 @@ export default function App() {
     if(search) localStorage.setItem("ad_last_url", search + " @ " + new Date().toISOString());
     if(receiptFile){
       // Ulož do sessionStorage před replaceState
-      sessionStorage.setItem("ad_pending_receipt", receiptFile);
+      localStorage.setItem("ad_pending_receipt", receiptFile);
       window.history.replaceState({}, "", "/");
     }
   }, []);
@@ -935,9 +935,9 @@ export default function App() {
   // Zpracuj pending receipt ze sessionStorage jakmile jsou vozidla načtena
   useEffect(()=>{
     if(!vehicles.length || !activeVid) return;
-    const pending = sessionStorage.getItem("ad_pending_receipt");
+    const pending = localStorage.getItem("ad_pending_receipt");
     if(!pending) return;
-    sessionStorage.removeItem("ad_pending_receipt");
+    localStorage.removeItem("ad_pending_receipt");
     setSharedReceipt(pending);
     setTab("fueling");
   }, [vehicles, activeVid]);
@@ -1453,7 +1453,7 @@ export default function App() {
               <div style={{fontSize:11,color:"var(--t3)",padding:"8px 12px",background:"var(--s2)",borderRadius:8,wordBreak:"break-all",userSelect:"all"}}>
                 URL: {localStorage.getItem("ad_last_url")||"Žádná URL"}<br/>
                 sharedReceipt: {sharedReceipt||"null"}<br/>
-                sessionPending: {sessionStorage.getItem("ad_pending_receipt")||"null"}<br/>
+                sessionPending: {localStorage.getItem("ad_pending_receipt")||"null"}<br/>
                 activeVid: {activeVid||"null"}<br/>
                 tab: {tab}<br/>
                 vehicles: {vehicles.length}
