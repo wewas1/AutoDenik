@@ -878,14 +878,7 @@ export default function App() {
   const [pwaPrompt, setPwaPrompt] = useState(null);
   const [showPwaInstall, setShowPwaInstall] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
-  const [sharedReceipt, setSharedReceipt] = useState(()=>{
-    const pending = localStorage.getItem("ad_pending_receipt");
-    if(pending) {
-      localStorage.removeItem("ad_pending_receipt");
-      return pending;
-    }
-    return null;
-  });
+  const [sharedReceipt, setSharedReceipt] = useState(null);
 
   const [vehicles, setVehicles] = useState([]);
   const [fueling, setFueling] = useState([]);
@@ -1031,6 +1024,13 @@ export default function App() {
     setAddons((a.data||[]).map(x=>({...x,vid:x.vehicle_id})));
     if(vs.length>0 && !activeVid) setActiveVid(vs[0].id);
     setLoading(false);
+    // Zpracuj sdílený soubor po načtení dat
+    const pendingReceipt = localStorage.getItem("ad_pending_receipt");
+    if(pendingReceipt) {
+      localStorage.removeItem("ad_pending_receipt");
+      setSharedReceipt(pendingReceipt);
+      setTab("fueling");
+    }
   };
 
   // Auth handlers
