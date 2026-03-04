@@ -925,11 +925,44 @@ export default function App() {
   },[theme]);
   const [editV, setEditV] = useState(null);
 
-  // Handle PWA Share Target - přijmi zprávu ze Service Workeru
+  // Handle PWA Share Target - přijmi zprávu ze Service Workeru nebo IDB
   useEffect(()=>{
+    // IDB helper
+    const idbGet = (key) => new Promise((resolve) => {
+      const req = indexedDB.open('autodenik-sw', 1);
+      req.onupgradeneeded = e => e.target.result.createObjectStore('kv');
+      req.onsuccess = e => {
+        const tx = e.target.result.transaction('kv', 'readonly');
+        const r = tx.objectStore('kv').get(key);
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => resolve(null);
+      };
+      req.onerror = () => resolve(null);
+    });
+    const idbDel = (key) => new Promise((resolve) => {
+      const req = indexedDB.open('autodenik-sw', 1);
+      req.onsuccess = e => {
+        const tx = e.target.result.transaction('kv', 'readwrite');
+        tx.objectStore('kv').delete(key);
+        tx.oncomplete = resolve;
+      };
+      req.onerror = resolve;
+    });
+
+    // Zkontroluj IDB při startu
+    idbGet('pending_receipt').then(receipt => {
+      if(receipt) {
+        localStorage.setItem("ad_last_url", "IDB:" + receipt + " @ " + new Date().toISOString());
+        idbDel('pending_receipt');
+        setSharedReceipt(receipt);
+        setTab("fueling");
+      }
+    });
+
+    // Poslouchej SW postMessage
     const handler = (e) => {
       if(e.data?.type === "RECEIPT" && e.data?.receipt) {
-        localStorage.setItem("ad_last_url", "SW:" + e.data.receipt + " @ " + new Date().toISOString());
+        localStorage.setItem("ad_last_url", "SW-MSG:" + e.data.receipt + " @ " + new Date().toISOString());
         setSharedReceipt(e.data.receipt);
         setTab("fueling");
       }
