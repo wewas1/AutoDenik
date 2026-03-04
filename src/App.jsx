@@ -194,7 +194,6 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone
 
   // Zpracuj sdílený soubor z Orlen aplikace
   useEffect(()=>{
-    setDebugMsg(p => p + " | proc: sr=" + sharedReceipt + " vid=" + vid);
     if(!sharedReceipt || !vid) return;
     const processShared = async()=>{
       try {
@@ -874,7 +873,6 @@ export default function App() {
   const [showPwaInstall, setShowPwaInstall] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
   const [sharedReceipt, setSharedReceipt] = useState(null);
-  const [debugMsg, setDebugMsg] = useState("");
 
   const [vehicles, setVehicles] = useState([]);
   const [fueling, setFueling] = useState([]);
@@ -925,8 +923,7 @@ export default function App() {
   useEffect(()=>{
     const params = new URLSearchParams(window.location.search);
     const receiptFile = params.get("receipt");
-    const msg = "URL: " + window.location.search + " | receipt: " + (receiptFile||"none");
-    setDebugMsg(msg);
+
     if(receiptFile){
       window.history.replaceState({}, "", "/");
       setSharedReceipt(receiptFile);
@@ -1191,7 +1188,6 @@ export default function App() {
   if(authLoading) return (
     <>
       <CSS/>
-      {debugMsg&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:9999,background:"#ff0",color:"#000",fontSize:11,padding:"4px 8px",wordBreak:"break-all"}} onClick={()=>setDebugMsg("")}>{debugMsg}</div>}
       <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--t3)"}}>
         <div>Načítám...</div>
       </div>
