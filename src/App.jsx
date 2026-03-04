@@ -197,18 +197,17 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone
     if(!sharedReceipt || !vid) return;
     const processShared = async()=>{
       try {
-        // Stáhni soubor ze Supabase Storage
         const { data, error } = await supabase.storage
           .from("temp-receipts")
           .download(sharedReceipt);
         if(error) throw error;
-        // Otevři formulář a skenuj
         const lfd = getLastFuelForForm();
         setForm({...ef, fuelType:lfd.fuelType, customFuel:lfd.customFuel});
         setEditId(null);
         setShowF(true);
+        // Krátká pauza aby se modal renderoval
+        await new Promise(r => setTimeout(r, 100));
         await scanReceipt(data);
-        // Smaž dočasný soubor
         await supabase.storage.from("temp-receipts").remove([sharedReceipt]);
         onSharedReceiptDone?.();
       } catch(e) {
@@ -927,6 +926,7 @@ export default function App() {
     if(receiptFile){
       window.history.replaceState({}, "", "/");
       setSharedReceipt(receiptFile);
+      setTab("fueling"); // Přepni na záložku tankování
     }
   }, []);
 
