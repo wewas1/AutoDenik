@@ -1,4 +1,4 @@
-const CACHE_NAME = 'autodenik-v3';
+const CACHE_NAME = 'autodenik-v4';
 
 // Jednoduchá IDB helper
 function idbSet(key, value) {
