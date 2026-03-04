@@ -925,44 +925,42 @@ export default function App() {
   },[theme]);
   const [editV, setEditV] = useState(null);
 
-  // Handle PWA Share Target - přijmi zprávu ze Service Workeru nebo IDB
+  // Handle PWA Share Target
   useEffect(()=>{
-    // IDB helper
-    const idbGet = (key) => new Promise((resolve) => {
-      const req = indexedDB.open('autodenik-sw', 1);
-      req.onupgradeneeded = e => e.target.result.createObjectStore('kv');
-      req.onsuccess = e => {
-        const tx = e.target.result.transaction('kv', 'readonly');
-        const r = tx.objectStore('kv').get(key);
-        r.onsuccess = () => resolve(r.result);
+    const idbGet = () => new Promise((resolve) => {
+      try {
+        const r = indexedDB.open('ad', 1);
+        r.onupgradeneeded = e => e.target.result.createObjectStore('kv');
+        r.onsuccess = e => {
+          try {
+            const tx = e.target.result.transaction('kv', 'readwrite');
+            const store = tx.objectStore('kv');
+            const get = store.get('receipt');
+            get.onsuccess = () => {
+              if(get.result) store.delete('receipt');
+              resolve(get.result || null);
+            };
+            get.onerror = () => resolve(null);
+          } catch(e) { resolve(null); }
+        };
         r.onerror = () => resolve(null);
-      };
-      req.onerror = () => resolve(null);
-    });
-    const idbDel = (key) => new Promise((resolve) => {
-      const req = indexedDB.open('autodenik-sw', 1);
-      req.onsuccess = e => {
-        const tx = e.target.result.transaction('kv', 'readwrite');
-        tx.objectStore('kv').delete(key);
-        tx.oncomplete = resolve;
-      };
-      req.onerror = resolve;
+      } catch(e) { resolve(null); }
     });
 
-    // Zkontroluj IDB při startu
-    idbGet('pending_receipt').then(receipt => {
+    const check = async () => {
+      const receipt = await idbGet();
       if(receipt) {
         localStorage.setItem("ad_last_url", "IDB:" + receipt + " @ " + new Date().toISOString());
-        idbDel('pending_receipt');
         setSharedReceipt(receipt);
         setTab("fueling");
       }
-    });
+    };
+    check();
 
-    // Poslouchej SW postMessage
+    // SW postMessage
     const handler = (e) => {
-      if(e.data?.type === "RECEIPT" && e.data?.receipt) {
-        localStorage.setItem("ad_last_url", "SW-MSG:" + e.data.receipt + " @ " + new Date().toISOString());
+      if(e.data?.type === "RECEIPT") {
+        localStorage.setItem("ad_last_url", "SW:" + e.data.receipt + " @ " + new Date().toISOString());
         setSharedReceipt(e.data.receipt);
         setTab("fueling");
       }
