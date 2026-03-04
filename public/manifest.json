@@ -12,7 +12,7 @@
     { "src": "/logo.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
   ],
   "share_target": {
-    "action": "/share-target",
+    "action": "/api/share-target",
     "method": "POST",
     "enctype": "multipart/form-data",
     "params": {
