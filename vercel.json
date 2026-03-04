@@ -1,8 +1,6 @@
 {
-  "routes": [
-    { "src": "/privacy", "dest": "/privacy.html" },
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/share-target", "dest": "/api/share-target" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/((?!privacy|api).*)", "destination": "/index.html" }
   ]
 }
