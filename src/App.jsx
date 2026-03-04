@@ -201,17 +201,24 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone
           .from("temp-receipts")
           .download(sharedReceipt);
         if(error) throw error;
+        // Převeď Blob na File objekt
+        const ext = sharedReceipt.endsWith(".pdf") ? ".pdf" : ".jpg";
+        const mime = ext === ".pdf" ? "application/pdf" : "image/jpeg";
+        const file = new File([data], "receipt" + ext, { type: mime });
+        // Otevři formulář
         const lfd = getLastFuelForForm();
         setForm({...ef, fuelType:lfd.fuelType, customFuel:lfd.customFuel});
         setEditId(null);
         setShowF(true);
-        // Krátká pauza aby se modal renderoval
-        await new Promise(r => setTimeout(r, 100));
-        await scanReceipt(data);
+        await new Promise(r => setTimeout(r, 200));
+        // Skenuj
+        await scanReceipt(file);
+        // Smaž z Storage
         await supabase.storage.from("temp-receipts").remove([sharedReceipt]);
         onSharedReceiptDone?.();
       } catch(e) {
-        console.error("Shared receipt error:", e);
+        console.error("Shared receipt error:", e.message);
+        // I při chybě nech formulář otevřený
         onSharedReceiptDone?.();
       }
     };
