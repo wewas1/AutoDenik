@@ -872,15 +872,7 @@ export default function App() {
   const [pwaPrompt, setPwaPrompt] = useState(null);
   const [showPwaInstall, setShowPwaInstall] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
-  const [sharedReceipt, setSharedReceipt] = useState(()=>{
-    const params = new URLSearchParams(window.location.search);
-    const r = params.get("receipt");
-    if(r) {
-      localStorage.setItem("ad_last_url", "?receipt="+r+" @ "+new Date().toISOString());
-      window.history.replaceState({}, "", "/");
-    }
-    return r || localStorage.getItem("ad_pending_receipt") || null;
-  });
+  const [sharedReceipt, setSharedReceipt] = useState(null);
 
   const [vehicles, setVehicles] = useState([]);
   const [fueling, setFueling] = useState([]);
@@ -929,15 +921,35 @@ export default function App() {
   // Auth check on load
   // Handle PWA Share Target - zpracuj sdílený soubor z URL parametru
   useEffect(()=>{
-    const search = window.location.search;
-    const params = new URLSearchParams(search);
-    const receiptFile = params.get("receipt");
-    if(search) localStorage.setItem("ad_last_url", search + " @ " + new Date().toISOString());
-    if(receiptFile){
-      // Ulož do sessionStorage před replaceState
-      localStorage.setItem("ad_pending_receipt", receiptFile);
-      window.history.replaceState({}, "", "/");
+    const check = () => {
+      const search = window.location.search;
+      const params = new URLSearchParams(search);
+      const receiptFile = params.get("receipt");
+      if(search) localStorage.setItem("ad_last_url", search + " @ " + new Date().toISOString());
+      if(receiptFile){
+        localStorage.setItem("ad_pending_receipt", receiptFile);
+        window.history.replaceState({}, "", "/");
+        return receiptFile;
+      }
+      return null;
+    };
+    // Zkus ihned
+    const immediate = check();
+    if(immediate) {
+      setSharedReceipt(immediate);
+      setTab("fueling");
+      return;
     }
+    // Zkus znovu po 300ms (PWA může načíst URL se zpožděním)
+    const t1 = setTimeout(() => {
+      const delayed = check();
+      if(delayed) { setSharedReceipt(delayed); setTab("fueling"); }
+    }, 300);
+    const t2 = setTimeout(() => {
+      const delayed = check();
+      if(delayed) { setSharedReceipt(delayed); setTab("fueling"); }
+    }, 1000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
   // Zpracuj pending receipt ze sessionStorage jakmile jsou vozidla načtena
@@ -1459,12 +1471,11 @@ export default function App() {
               </button>
               <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",margin:"16px 0 4px"}}>Debug</div>
               <div style={{fontSize:11,color:"var(--t3)",padding:"8px 12px",background:"var(--s2)",borderRadius:8,wordBreak:"break-all",userSelect:"all"}}>
-                URL: {localStorage.getItem("ad_last_url")||"Žádná URL"}<br/>
+                lastURL: {localStorage.getItem("ad_last_url")||"none"}<br/>
                 sharedReceipt: {sharedReceipt||"null"}<br/>
-                sessionPending: {localStorage.getItem("ad_pending_receipt")||"null"}<br/>
-                activeVid: {activeVid||"null"}<br/>
-                tab: {tab}<br/>
-                vehicles: {vehicles.length}
+                pendingLS: {localStorage.getItem("ad_pending_receipt")||"null"}<br/>
+                activeVid: {activeVid?"ok":"null"}<br/>
+                tab: {tab} | v: {vehicles.length}
               </div>
               <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",margin:"16px 0 4px"}}>Informace</div>
               <a href="/privacy" target="_blank" style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:10,padding:"12px 16px",color:"var(--t2)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10,textDecoration:"none"}}>
