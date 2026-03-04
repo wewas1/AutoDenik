@@ -67,17 +67,24 @@ export default async function handler(req, res) {
 
     if (error) throw error;
 
-    // Vrať HTML stránku která uloží do localStorage a pak přesměruje
+    // HTML která otevře PWA přes deep link s parametrem
     res.setHeader('Content-Type', 'text/html');
     return res.send(`<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"></head>
-<body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>AutoDeník - Načítám účtenku...</title>
+</head>
+<body style="background:#0d0d0d;color:#f5f5f0;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;flex-direction:column;gap:16px">
+<div style="font-size:48px">⛽</div>
+<div>Načítám účtenku...</div>
 <script>
-  localStorage.setItem('ad_pending_receipt', '${path}');
-  window.location.replace('/');
+  const receipt = '${path}';
+  const url = 'https://auto-denik.vercel.app/?receipt=' + receipt;
+  // Otevři přímo PWA URL - Android Chrome otevře nainstalovanou PWA
+  window.location.href = url;
 </script>
-<p>Načítám účtenku...</p>
 </body>
 </html>`);
 
