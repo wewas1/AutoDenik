@@ -1,19 +1,4 @@
-const CACHE_NAME = 'autodenik-v4';
-
-// Jednoduchá IDB helper
-function idbSet(key, value) {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open('autodenik-sw', 1);
-    req.onupgradeneeded = e => e.target.result.createObjectStore('kv');
-    req.onsuccess = e => {
-      const tx = e.target.result.transaction('kv', 'readwrite');
-      tx.objectStore('kv').put(value, key);
-      tx.oncomplete = resolve;
-      tx.onerror = reject;
-    };
-    req.onerror = reject;
-  });
-}
+const CACHE_NAME = 'autodenik-v5';
 
 self.addEventListener('install', e => { self.skipWaiting(); });
 
@@ -29,19 +14,39 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
   if (url.pathname === '/api/share-target' && e.request.method === 'POST') {
-    e.respondWith(
-      fetch(e.request.clone()).then(async response => {
+    e.respondWith((async () => {
+      try {
+        const response = await fetch(e.request.clone());
         const text = await response.clone().text();
-        const match = text.match(/receipt[='"]([a-z0-9]+\.(pdf|jpg))/i);
+        const match = text.match(/['"]([a-z0-9]+\.(pdf|jpg))['"]/i);
         if (match) {
-          await idbSet('pending_receipt', match[1]);
-          // Pošli zprávu všem klientům
+          const receipt = match[1];
+          // Broadcast do všech klientů
           const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
-          clients.forEach(c => c.postMessage({ type: 'RECEIPT', receipt: match[1] }));
+          for (const client of clients) {
+            client.postMessage({ type: 'RECEIPT', receipt });
+          }
+          // Ulož do IDB jako záloha
+          try {
+            const db = await new Promise((res, rej) => {
+              const r = indexedDB.open('ad', 1);
+              r.onupgradeneeded = e => e.target.result.createObjectStore('kv');
+              r.onsuccess = e => res(e.target.result);
+              r.onerror = rej;
+            });
+            await new Promise((res, rej) => {
+              const tx = db.transaction('kv', 'readwrite');
+              tx.objectStore('kv').put(receipt, 'receipt');
+              tx.oncomplete = res;
+              tx.onerror = rej;
+            });
+          } catch(e) {}
         }
         return Response.redirect('/', 302);
-      }).catch(() => Response.redirect('/', 302))
-    );
+      } catch(e) {
+        return Response.redirect('/', 302);
+      }
+    })());
     return;
   }
 
