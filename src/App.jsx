@@ -872,7 +872,14 @@ export default function App() {
   const [pwaPrompt, setPwaPrompt] = useState(null);
   const [showPwaInstall, setShowPwaInstall] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
-  const [sharedReceipt, setSharedReceipt] = useState(null);
+  const [sharedReceipt, setSharedReceipt] = useState(()=>{
+    const pending = localStorage.getItem("ad_pending_receipt");
+    if(pending) {
+      localStorage.removeItem("ad_pending_receipt");
+      return pending;
+    }
+    return null;
+  });
 
   const [vehicles, setVehicles] = useState([]);
   const [fueling, setFueling] = useState([]);
@@ -918,49 +925,10 @@ export default function App() {
   },[theme]);
   const [editV, setEditV] = useState(null);
 
-  // Auth check on load
-  // Handle PWA Share Target - zpracuj sdílený soubor z URL parametru
+  // Handle PWA Share Target - nastav tab když je sharedReceipt
   useEffect(()=>{
-    const check = () => {
-      const search = window.location.search;
-      const params = new URLSearchParams(search);
-      const receiptFile = params.get("receipt");
-      if(search) localStorage.setItem("ad_last_url", search + " @ " + new Date().toISOString());
-      if(receiptFile){
-        localStorage.setItem("ad_pending_receipt", receiptFile);
-        window.history.replaceState({}, "", "/");
-        return receiptFile;
-      }
-      return null;
-    };
-    // Zkus ihned
-    const immediate = check();
-    if(immediate) {
-      setSharedReceipt(immediate);
-      setTab("fueling");
-      return;
-    }
-    // Zkus znovu po 300ms (PWA může načíst URL se zpožděním)
-    const t1 = setTimeout(() => {
-      const delayed = check();
-      if(delayed) { setSharedReceipt(delayed); setTab("fueling"); }
-    }, 300);
-    const t2 = setTimeout(() => {
-      const delayed = check();
-      if(delayed) { setSharedReceipt(delayed); setTab("fueling"); }
-    }, 1000);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    if(sharedReceipt) setTab("fueling");
   }, []);
-
-  // Zpracuj pending receipt ze sessionStorage jakmile jsou vozidla načtena
-  useEffect(()=>{
-    if(!vehicles.length || !activeVid) return;
-    const pending = localStorage.getItem("ad_pending_receipt");
-    if(!pending) return;
-    localStorage.removeItem("ad_pending_receipt");
-    setSharedReceipt(pending);
-    setTab("fueling");
-  }, [vehicles, activeVid]);
 
   useEffect(()=>{
     const hash = window.location.hash;
