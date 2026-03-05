@@ -183,8 +183,10 @@ const DF = ({from,to,onFrom,onTo}) => (
 );
 
 // ── FUELING ───────────────────────────────────────────────────────────────────
-const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone}) => {
-  const [showF,setShowF] = useState(false);
+const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone,externalShowF,setExternalShowF}) => {
+  const [_showF,_setShowF] = useState(false);
+  const showF = externalShowF !== undefined ? externalShowF : _showF;
+  const setShowF = externalShowF !== undefined ? setExternalShowF : _setShowF;
   const [editId,setEditId] = useState(null);
   const [fFrom,setFFrom] = useState("");
   const [fTo,setFTo] = useState("");
@@ -873,6 +875,7 @@ export default function App() {
   const [showPwaInstall, setShowPwaInstall] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
   const [sharedReceipt, setSharedReceipt] = useState(null);
+  const [showFuel, setShowFuel] = useState(false);
 
   const [vehicles, setVehicles] = useState([]);
   const [fueling, setFueling] = useState([]);
@@ -1433,7 +1436,7 @@ export default function App() {
                 ))}
               </div>
 
-              {tab==="fueling"&&<FuelMod key={activeVid} vid={activeVid} fueling={fueling} saveFuel={saveFuel} delFuel={delFuel} sharedReceipt={sharedReceipt} onSharedReceiptDone={()=>setSharedReceipt(null)}/>}
+              {tab==="fueling"&&<FuelMod vid={activeVid} fueling={fueling} saveFuel={saveFuel} delFuel={delFuel} sharedReceipt={sharedReceipt} onSharedReceiptDone={()=>setSharedReceipt(null)} externalShowF={showFuel} setExternalShowF={setShowFuel}/>}
               {tab==="repairs"&&<RepMod vid={activeVid} repairs={repairs} saveRepair={saveRepair} delRepair={delRepair}/>}
               {tab==="addons"&&<AddMod vid={activeVid} addons={addons} saveAddon={saveAddon} delAddon={delAddon}/>}
             </>
