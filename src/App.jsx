@@ -195,15 +195,12 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone
   // Zpracuj sdílený soubor z Orlen aplikace
   useEffect(()=>{
     if(!sharedReceipt || !vid) return;
-    localStorage.setItem("ad_last_url", "PROC:sr="+sharedReceipt+" vid="+vid+" @ "+new Date().toISOString());
     const processShared = async()=>{
       try {
-        localStorage.setItem("ad_last_url", "DOWNLOAD:"+sharedReceipt);
         const { data, error } = await supabase.storage
           .from("temp-receipts")
           .download(sharedReceipt);
         if(error) throw new Error("DL:"+error.message);
-        localStorage.setItem("ad_last_url", "OPENING_FORM");
         const ext = sharedReceipt.endsWith(".pdf") ? ".pdf" : ".jpg";
         const mime = ext === ".pdf" ? "application/pdf" : "image/jpeg";
         const file = new File([data], "receipt" + ext, { type: mime });
@@ -211,13 +208,11 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone
         setForm({...ef, fuelType:lfd.fuelType, customFuel:lfd.customFuel});
         setEditId(null);
         setShowF(true);
-        localStorage.setItem("ad_last_url", "FORM_OPEN_SCANNING");
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 300));
         await scanReceipt(file);
-        localStorage.setItem("ad_last_url", "SCAN_DONE");
         await supabase.storage.from("temp-receipts").remove([sharedReceipt]).catch(()=>{});
       } catch(e) {
-        localStorage.setItem("ad_last_url", "ERR:"+e.message);
+        console.error("Shared receipt error:", e.message);
       }
     };
     processShared();
@@ -1438,7 +1433,7 @@ export default function App() {
                 ))}
               </div>
 
-              {tab==="fueling"&&<FuelMod vid={activeVid} fueling={fueling} saveFuel={saveFuel} delFuel={delFuel} sharedReceipt={sharedReceipt} onSharedReceiptDone={()=>setSharedReceipt(null)}/>}
+              {tab==="fueling"&&<FuelMod key={activeVid} vid={activeVid} fueling={fueling} saveFuel={saveFuel} delFuel={delFuel} sharedReceipt={sharedReceipt} onSharedReceiptDone={()=>setSharedReceipt(null)}/>}
               {tab==="repairs"&&<RepMod vid={activeVid} repairs={repairs} saveRepair={saveRepair} delRepair={delRepair}/>}
               {tab==="addons"&&<AddMod vid={activeVid} addons={addons} saveAddon={saveAddon} delAddon={delAddon}/>}
             </>
