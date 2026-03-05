@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPA_URL = "https://jcpvjfhfgmijxdrldnds.supabase.co";
@@ -183,6 +183,285 @@ const DF = ({from,to,onFrom,onTo}) => (
 );
 
 // ── FUELING ───────────────────────────────────────────────────────────────────
+// ── STATS MOD ────────────────────────────────────────────────────────────────
+const STAT_WIDGETS = [
+  { id:"monthly_cost",    label:"Náklady na palivo / měsíc",     icon:"💰" },
+  { id:"avg_price",       label:"Průměrná cena paliva v čase",    icon:"📈" },
+  { id:"consumption",     label:"Spotřeba v čase",                icon:"⛽" },
+  { id:"cost_breakdown",  label:"Rozložení nákladů",              icon:"🥧" },
+  { id:"total_by_year",   label:"Roční přehled nákladů",          icon:"📅" },
+  { id:"station_stats",   label:"Oblíbené čerpací stanice",       icon:"📍" },
+  { id:"cost_per_km",     label:"Náklady na 100 km",              icon:"🚗" },
+  { id:"repairs_monthly", label:"Náklady na opravy / měsíc",      icon:"🔧" },
+];
+
+const StatsMod = ({ fueling, repairs, addons, vehicles, activeVid, user }) => {
+  const LS_KEY = "ad_stats_widgets_" + (activeVid||"all");
+  const [activeWidgets, setActiveWidgets] = useState(()=>{
+    try { return JSON.parse(localStorage.getItem(LS_KEY)) || ["monthly_cost","cost_breakdown","station_stats"]; }
+    catch(e) { return ["monthly_cost","cost_breakdown","station_stats"]; }
+  });
+  const [showPicker, setShowPicker] = useState(false);
+
+  const saveWidgets = (w) => { setActiveWidgets(w); localStorage.setItem(LS_KEY, JSON.stringify(w)); };
+  const toggle = (id) => saveWidgets(activeWidgets.includes(id) ? activeWidgets.filter(x=>x!==id) : [...activeWidgets, id]);
+
+  const vf = fueling.filter(f => f.vid === activeVid);
+  const vr = repairs.filter(r => r.vid === activeVid);
+  const va = addons.filter(a => a.vid === activeVid);
+
+  // Helpers
+  const monthKey = d => { const x = new Date(d); return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0"); };
+  const monthLabel = k => { const [y,m] = k.split("-"); return ["Led","Úno","Bře","Dub","Kvě","Čvn","Čvc","Srp","Zář","Říj","Lis","Pro"][parseInt(m)-1]+" "+y.slice(2); };
+
+  // monthly fuel cost
+  const monthlyCost = useMemo(()=>{
+    const map = {};
+    vf.forEach(f=>{ const k=monthKey(f.date); map[k]=(map[k]||0)+(f.total||0); });
+    return Object.keys(map).sort().map(k=>({ m: monthLabel(k), v: Math.round(map[k]) }));
+  },[vf]);
+
+  // avg price over time
+  const avgPrice = useMemo(()=>{
+    const map = {};
+    vf.forEach(f=>{ const k=monthKey(f.date); if(!map[k]) map[k]=[]; map[k].push(f.pricePerLiter||0); });
+    return Object.keys(map).sort().map(k=>({ m: monthLabel(k), v: Math.round(map[k].reduce((a,b)=>a+b,0)/map[k].length*100)/100 }));
+  },[vf]);
+
+  // consumption over time
+  const consumptionData = useMemo(()=>{
+    const sorted = [...vf].sort((a,b)=>new Date(a.date)-new Date(b.date)||a.km-b.km);
+    return sorted.map((f,i)=>{
+      const prev=sorted[i-1];
+      const driven=prev?f.km-prev.km:null;
+      const cons=driven&&driven>0?(f.liters/driven*100):null;
+      return cons?{ m:fmtD(f.date), v:+cons.toFixed(2) }:null;
+    }).filter(Boolean);
+  },[vf]);
+
+  // cost breakdown pie
+  const breakdown = useMemo(()=>{
+    const fuel = vf.reduce((s,f)=>s+(f.total||0),0);
+    const rep = vr.reduce((s,r)=>s+(r.matPrice||0)+(r.laborPrice||0),0);
+    const add = va.reduce((s,a)=>s+(a.price||0),0);
+    return [
+      { name:"Palivo", value: Math.round(fuel) },
+      { name:"Opravy", value: Math.round(rep) },
+      { name:"Doplňky", value: Math.round(add) },
+    ].filter(x=>x.value>0);
+  },[vf,vr,va]);
+
+  // yearly totals
+  const yearlyTotal = useMemo(()=>{
+    const map = {};
+    [...vf.map(f=>({y:new Date(f.date).getFullYear(),v:f.total||0})),
+     ...vr.map(r=>({y:new Date(r.date).getFullYear(),v:(r.matPrice||0)+(r.laborPrice||0)})),
+     ...va.map(a=>({y:new Date(a.date).getFullYear(),v:a.price||0}))
+    ].forEach(({y,v})=>{ map[y]=(map[y]||0)+v; });
+    return Object.keys(map).sort().map(k=>({ m:k, v:Math.round(map[k]) }));
+  },[vf,vr,va]);
+
+  // station stats
+  const stationStats = useMemo(()=>{
+    const map = {};
+    vf.forEach(f=>{ if(!f.location) return; const k=f.location.split(" ")[0]||f.location; map[k]=(map[k]||0)+1; });
+    return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([k,v])=>({ m:k, v }));
+  },[vf]);
+
+  // cost per 100km monthly
+  const costPerKm = useMemo(()=>{
+    const sorted = [...vf].sort((a,b)=>new Date(a.date)-new Date(b.date)||a.km-b.km);
+    const map = {};
+    sorted.forEach((f,i)=>{
+      const prev=sorted[i-1];
+      if(!prev) return;
+      const km=f.km-prev.km;
+      if(km<=0) return;
+      const k=monthKey(f.date);
+      if(!map[k]) map[k]={cost:0,km:0};
+      map[k].cost+=(f.total||0);
+      map[k].km+=km;
+    });
+    return Object.keys(map).sort().map(k=>({ m:monthLabel(k), v:Math.round(map[k].cost/map[k].km*100*10)/10 }));
+  },[vf]);
+
+  // repairs monthly
+  const repairsMonthly = useMemo(()=>{
+    const map = {};
+    vr.forEach(r=>{ const k=monthKey(r.date); map[k]=(map[k]||0)+(r.matPrice||0)+(r.laborPrice||0); });
+    return Object.keys(map).sort().map(k=>({ m:monthLabel(k), v:Math.round(map[k]) }));
+  },[vr]);
+
+  const PIE_COLORS = ["var(--acc)","var(--blue)","var(--green)","var(--red)"];
+  const TT_STYLE = { background:"var(--s2)", border:"1px solid var(--b1)", borderRadius:8, color:"var(--t1)", fontSize:12 };
+
+  const renderWidget = (id) => {
+    const wStyle = { background:"var(--s1)", border:"1px solid var(--b1)", borderRadius:14, padding:16, marginBottom:12 };
+    const title = (t) => <div style={{fontSize:12,fontWeight:600,color:"var(--t2)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:12}}>{t}</div>;
+    const noData = <div style={{color:"var(--t3)",fontSize:13,textAlign:"center",padding:"20px 0"}}>Zatím žádná data</div>;
+
+    switch(id) {
+      case "monthly_cost": return (
+        <div key={id} style={wStyle}>
+          {title("💰 Náklady na palivo / měsíc")}
+          {monthlyCost.length<2 ? noData :
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={monthlyCost} margin={{top:0,right:0,left:-20,bottom:0}}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/>
+              <XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/>
+              <YAxis tick={{fontSize:10,fill:"var(--t3)"}}/>
+              <Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v)+" Kč"}/>
+              <Bar dataKey="v" fill="var(--acc)" radius={[4,4,0,0]}/>
+            </BarChart>
+          </ResponsiveContainer>}
+        </div>
+      );
+      case "avg_price": return (
+        <div key={id} style={wStyle}>
+          {title("📈 Průměrná cena paliva v čase")}
+          {avgPrice.length<2 ? noData :
+          <ResponsiveContainer width="100%" height={180}>
+            <AreaChart data={avgPrice} margin={{top:0,right:0,left:-20,bottom:0}}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/>
+              <XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/>
+              <YAxis tick={{fontSize:10,fill:"var(--t3)"}}/>
+              <Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v,2)+" Kč/L"}/>
+              <Area type="monotone" dataKey="v" stroke="var(--green)" fill="rgba(78,203,113,.15)" strokeWidth={2}/>
+            </AreaChart>
+          </ResponsiveContainer>}
+        </div>
+      );
+      case "consumption": return (
+        <div key={id} style={wStyle}>
+          {title("⛽ Spotřeba v čase")}
+          {consumptionData.length<2 ? noData :
+          <ResponsiveContainer width="100%" height={180}>
+            <AreaChart data={consumptionData} margin={{top:0,right:0,left:-20,bottom:0}}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/>
+              <XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/>
+              <YAxis tick={{fontSize:10,fill:"var(--t3)"}}/>
+              <Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v,2)+" L/100km"}/>
+              <Area type="monotone" dataKey="v" stroke="var(--acc)" fill="rgba(200,169,110,.15)" strokeWidth={2}/>
+            </AreaChart>
+          </ResponsiveContainer>}
+        </div>
+      );
+      case "cost_breakdown": return (
+        <div key={id} style={wStyle}>
+          {title("🥧 Rozložení nákladů")}
+          {breakdown.length===0 ? noData :
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie data={breakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({name,percent})=>name+" "+Math.round(percent*100)+"%"} labelLine={false}>
+                {breakdown.map((e,i)=><Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>)}
+              </Pie>
+              <Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v)+" Kč"}/>
+            </PieChart>
+          </ResponsiveContainer>}
+        </div>
+      );
+      case "total_by_year": return (
+        <div key={id} style={wStyle}>
+          {title("📅 Roční přehled celkových nákladů")}
+          {yearlyTotal.length===0 ? noData :
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={yearlyTotal} margin={{top:0,right:0,left:-20,bottom:0}}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/>
+              <XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}}/>
+              <YAxis tick={{fontSize:10,fill:"var(--t3)"}}/>
+              <Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v)+" Kč"}/>
+              <Bar dataKey="v" fill="var(--blue)" radius={[4,4,0,0]}/>
+            </BarChart>
+          </ResponsiveContainer>}
+        </div>
+      );
+      case "station_stats": return (
+        <div key={id} style={wStyle}>
+          {title("📍 Oblíbené čerpací stanice")}
+          {stationStats.length===0 ? noData :
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={stationStats} layout="vertical" margin={{top:0,right:10,left:30,bottom:0}}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/>
+              <XAxis type="number" tick={{fontSize:10,fill:"var(--t3)"}}/>
+              <YAxis type="category" dataKey="m" tick={{fontSize:11,fill:"var(--t2)"}} width={60}/>
+              <Tooltip contentStyle={TT_STYLE} formatter={v=>v+" x"}/>
+              <Bar dataKey="v" fill="var(--acc2)" radius={[0,4,4,0]}/>
+            </BarChart>
+          </ResponsiveContainer>}
+        </div>
+      );
+      case "cost_per_km": return (
+        <div key={id} style={wStyle}>
+          {title("🚗 Náklady na palivo / 100 km")}
+          {costPerKm.length<2 ? noData :
+          <ResponsiveContainer width="100%" height={180}>
+            <AreaChart data={costPerKm} margin={{top:0,right:0,left:-20,bottom:0}}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/>
+              <XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/>
+              <YAxis tick={{fontSize:10,fill:"var(--t3)"}}/>
+              <Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v,1)+" Kč"}/>
+              <Area type="monotone" dataKey="v" stroke="var(--red)" fill="rgba(224,92,92,.15)" strokeWidth={2}/>
+            </AreaChart>
+          </ResponsiveContainer>}
+        </div>
+      );
+      case "repairs_monthly": return (
+        <div key={id} style={wStyle}>
+          {title("🔧 Náklady na opravy / měsíc")}
+          {repairsMonthly.length===0 ? noData :
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={repairsMonthly} margin={{top:0,right:0,left:-20,bottom:0}}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/>
+              <XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/>
+              <YAxis tick={{fontSize:10,fill:"var(--t3)"}}/>
+              <Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v)+" Kč"}/>
+              <Bar dataKey="v" fill="var(--red)" radius={[4,4,0,0]}/>
+            </BarChart>
+          </ResponsiveContainer>}
+        </div>
+      );
+      default: return null;
+    }
+  };
+
+  return (
+    <div className="au">
+      {/* Header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div style={{fontSize:14,color:"var(--t2)"}}>Tvůj přehled</div>
+        <button onClick={()=>setShowPicker(p=>!p)} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:10,padding:"8px 14px",color:"var(--t1)",fontSize:13,display:"flex",alignItems:"center",gap:6}}>
+          ✏️ Upravit
+        </button>
+      </div>
+
+      {/* Widget picker */}
+      {showPicker && (
+        <div style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:14,padding:16,marginBottom:16}}>
+          <div style={{fontSize:11,fontWeight:600,color:"var(--t3)",letterSpacing:".08em",textTransform:"uppercase",marginBottom:12}}>Zobrazené widgety</div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {STAT_WIDGETS.map(w=>(
+              <label key={w.id} style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer",padding:"8px 10px",borderRadius:8,background:activeWidgets.includes(w.id)?"rgba(200,169,110,.08)":"transparent",border:"1px solid",borderColor:activeWidgets.includes(w.id)?"var(--acc)":"transparent"}}>
+                <input type="checkbox" checked={activeWidgets.includes(w.id)} onChange={()=>toggle(w.id)} style={{width:16,height:16,accentColor:"var(--acc)"}}/>
+                <span style={{fontSize:14}}>{w.icon} {w.label}</span>
+              </label>
+            ))}
+          </div>
+          <button onClick={()=>setShowPicker(false)} style={{marginTop:12,background:"var(--acc)",border:"none",borderRadius:10,padding:"10px 0",color:"#0a0a0a",fontWeight:600,fontSize:14,width:"100%"}}>Hotovo</button>
+        </div>
+      )}
+
+      {/* Widgets */}
+      {activeWidgets.length === 0 && (
+        <div style={{textAlign:"center",color:"var(--t3)",padding:"40px 0"}}>
+          <div style={{fontSize:40,marginBottom:12}}>📊</div>
+          <div>Žádné widgety. Klikni Upravit a vyber co chceš vidět.</div>
+        </div>
+      )}
+      {activeWidgets.map(id => renderWidget(id))}
+    </div>
+  );
+};
+
 const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone,externalShowF,setExternalShowF}) => {
   const [_showF,_setShowF] = useState(false);
   const showF = externalShowF !== undefined ? externalShowF : _showF;
@@ -376,7 +655,7 @@ const getLastFuelForForm = () => {
       </div>
       <div style={{display:"flex",gap:10}}>
         <StatBox label="Počet tankování" val={filtered.length} unit="záznamů" c="var(--blue)"/>
-        <StatBox label="Celkem litrů" val={fmt(filtered.reduce((s,f)=>s+(parseFloat(f.liters)||0),0),1)} unit="L" c="var(--green)"/>
+        <StatBox label="Celkem litrů" val={fmt(filtered.reduce((s,f)=>s+(parseFloat(f.liters)||0),0),1)} unit="l" c="var(--green)"/>
       </div>
 
       {/* Filter + Add */}
@@ -1226,7 +1505,13 @@ export default function App() {
   const delAddon = async(id)=>{ await supabase.from("addons").delete().eq("id",id); setAddons(p=>p.filter(x=>x.id!==id)); };
 
   const av = vehicles.find(v=>v.id===activeVid);
-  const TABS = [{id:"fueling",icon:"⛽",label:"Tankování"},{id:"repairs",icon:"🔧",label:"Opravy"},{id:"addons",icon:"📦",label:"Doplňky"}];
+  const isPremium = user?.user_metadata?.premium === true;
+  const TABS = [
+    {id:"fueling",icon:"⛽",label:"Tankování"},
+    {id:"repairs",icon:"🔧",label:"Opravy"},
+    {id:"addons",icon:"📦",label:"Doplňky"},
+    ...(isPremium ? [{id:"stats",icon:"📊",label:"Statistiky"}] : [])
+  ];
 
   // ── AUTH SCREEN ───────────────────────────────────────────────────────────
   if(authLoading) return (
@@ -1442,6 +1727,7 @@ export default function App() {
               {tab==="fueling"&&<FuelMod vid={activeVid} fueling={fueling} saveFuel={saveFuel} delFuel={delFuel} sharedReceipt={sharedReceipt} onSharedReceiptDone={()=>setSharedReceipt(null)} externalShowF={showFuel} setExternalShowF={setShowFuel}/>}
               {tab==="repairs"&&<RepMod vid={activeVid} repairs={repairs} saveRepair={saveRepair} delRepair={delRepair}/>}
               {tab==="addons"&&<AddMod vid={activeVid} addons={addons} saveAddon={saveAddon} delAddon={delAddon}/>}
+              {tab==="stats"&&isPremium&&<StatsMod fueling={fueling} repairs={repairs} addons={addons} vehicles={vehicles} activeVid={activeVid} user={user}/>}
             </>
           ):(
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"60vh",gap:16,color:"var(--t3)"}}>
