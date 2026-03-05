@@ -537,7 +537,7 @@ const getLastFuelForForm = () => {
       </div>
       <div style={{display:"flex",gap:10}}>
         <StatBox label="Počet tankování" val={filtered.length} unit="záznamů" c="var(--blue)"/>
-        <StatBox label="Celkem litrů" val={fmt(filtered.reduce((s,f)=>s+(parseFloat(f.liters)||0),0),1)} unit="l" c="var(--green)"/>
+        <StatBox label="Celkem litrů" val={fmt(filtered.reduce((s,f)=>s+(parseFloat(f.liters)||0),0),1)} unit="L" c="var(--green)"/>
       </div>
 
       {/* Filter + Add */}
