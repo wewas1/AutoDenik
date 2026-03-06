@@ -1232,13 +1232,13 @@ export default function App() {
     const [v,f,r,a] = await Promise.all([
       supabase.from("vehicles").select("*").eq("user_id",uid).order("created_at"),
       supabase.from("fueling").select("*").eq("user_id",uid).order("date"),
-      supabase.from("repairs").select("*").eq("user_id",uid).order("date",{ascending:false}),
-      supabase.from("addons").select("*").eq("user_id",uid).order("date",{ascending:false}),
+      supabase.from("repairs").select("*").eq("user_id",uid).order("date",{ascending:false}).order("km",{ascending:false}),
+      supabase.from("addons").select("*").eq("user_id",uid).order("date",{ascending:false}).order("km",{ascending:false}),
     ]);
     const vs = v.data||[];
     setVehicles(vs);
     setFueling((f.data||[]).map(x=>({...x,vid:x.vehicle_id,fuelType:x.fuel_type,pricePerLiter:x.price_per_liter})));
-    setRepairs((r.data||[]).map(x=>({...x,vid:x.vehicle_id,matPrice:x.mat_price,laborPrice:x.labor_price})));
+    setRepairs((r.data||[]).map(x=>({...x,vid:x.vehicle_id,matPrice:x.mat_price,laborPrice:x.labor_price})).sort((a,b)=>b.date.localeCompare(a.date)||b.km-a.km));
     setAddons((a.data||[]).map(x=>({...x,vid:x.vehicle_id})));
     if(vs.length>0 && !activeVid) setActiveVid(vs[0].id);
     setLoading(false);
