@@ -443,7 +443,7 @@ const getLastFuelForForm = () => {
     setForm(u);
   };
   const openNew=()=>{const lfd=getLastFuelForForm();setForm({...ef,fuelType:lfd.fuelType,customFuel:lfd.customFuel});setEditId(null);setShowF(true);};
-  const openEdit=f=>{setForm({...f,liters:String(f.liters),pricePerLiter:String(f.pricePerLiter),km:String(f.km)});setEditId(f.id);setShowF(true);};
+  const openEdit=f=>{setForm({...f,liters:String(f.liters),pricePerLiter:String(f.pricePerLiter),total:String(parseFloat(f.total||0).toFixed(2)),km:String(f.km)});setEditId(f.id);setShowF(true);};
   const scanReceipt = async(file) => {
     setScanLoading(true);
     setScanError("");
