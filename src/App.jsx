@@ -191,7 +191,7 @@ const STAT_WIDGETS = [
   { id:"cost_breakdown",    label:"Rozložení nákladů",              icon:"🥧" },
   { id:"total_by_year",     label:"Roční přehled nákladů",          icon:"📅" },
   { id:"station_stats",     label:"Oblíbené čerpací stanice",       icon:"📍" },
-  { id:"cost_per_km",       label:"Náklady na palivo / 100 km",     icon:"🚗" },
+  { id:"cost_per_km",       label:"Náklady na palivo / 1 km",       icon:"🚗" },
   { id:"repairs_monthly",   label:"Náklady na opravy / měsíc",      icon:"🔧" },
   { id:"vehicles_compare",  label:"Srovnání vozidel",               icon:"🚘" },
 ];
@@ -229,7 +229,7 @@ const StatsMod = ({ fueling, repairs, addons, vehicles, activeVid, user }) => {
   const breakdown = useMemo(()=>{ const fuel=vf.reduce((s,f)=>s+(f.total||0),0); const rep=vr.reduce((s,r)=>s+(r.matPrice||0)+(r.laborPrice||0),0); const add=va.reduce((s,a)=>s+(a.price||0),0); return [{ name:"Palivo", value:Math.round(fuel) },{ name:"Opravy", value:Math.round(rep) },{ name:"Doplňky", value:Math.round(add) }].filter(x=>x.value>0); },[vf,vr,va]);
   const yearlyTotal = useMemo(()=>{ const map={}; [...fueling.filter(f=>f.vid===activeVid).map(f=>({y:new Date(f.date).getFullYear(),v:f.total||0})),...repairs.filter(r=>r.vid===activeVid).map(r=>({y:new Date(r.date).getFullYear(),v:(r.matPrice||0)+(r.laborPrice||0)})),...addons.filter(a=>a.vid===activeVid).map(a=>({y:new Date(a.date).getFullYear(),v:a.price||0}))].forEach(({y,v})=>{ map[y]=(map[y]||0)+v; }); return Object.keys(map).sort().map(k=>({ m:k, v:Math.round(map[k]) })); },[fueling,repairs,addons,activeVid]);
   const stationStats = useMemo(()=>{ const map={}; vf.forEach(f=>{ if(!f.location) return; const k=f.location.split(" ")[0]||f.location; map[k]=(map[k]||0)+1; }); return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([k,v])=>({ m:k, v })); },[vf]);
-  const costPerKm = useMemo(()=>{ const sorted=[...vf].sort((a,b)=>new Date(a.date)-new Date(b.date)||a.km-b.km); const map={}; sorted.forEach((f,i)=>{ const prev=sorted[i-1]; if(!prev) return; const km=f.km-prev.km; if(km<=0) return; const k=monthKey(f.date); if(!map[k]) map[k]={cost:0,km:0}; map[k].cost+=(f.total||0); map[k].km+=km; }); return Object.keys(map).sort().map(k=>({ m:monthLabel(k), v:Math.round(map[k].cost/map[k].km*100*10)/10 })); },[vf]);
+  const costPerKm = useMemo(()=>{ const sorted=[...vf].sort((a,b)=>new Date(a.date)-new Date(b.date)||a.km-b.km); const map={}; sorted.forEach((f,i)=>{ const prev=sorted[i-1]; if(!prev) return; const km=f.km-prev.km; if(km<=0) return; const k=monthKey(f.date); if(!map[k]) map[k]={cost:0,km:0}; map[k].cost+=(f.total||0); map[k].km+=km; }); return Object.keys(map).sort().map(k=>({ m:monthLabel(k), v:Math.round(map[k].cost/map[k].km*100)/100 })); },[vf]);
   const repairsMonthly = useMemo(()=>{ const map={}; vr.forEach(r=>{ const k=monthKey(r.date); map[k]=(map[k]||0)+(r.matPrice||0)+(r.laborPrice||0); }); return Object.keys(map).sort().map(k=>({ m:monthLabel(k), v:Math.round(map[k]) })); },[vr]);
 
   // Srovnání vozidel - celkové náklady
@@ -253,24 +253,24 @@ const StatsMod = ({ fueling, repairs, addons, vehicles, activeVid, user }) => {
     const title = (t) => <div style={{fontSize:12,fontWeight:600,color:"var(--t2)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:12}}>{t}</div>;
     const noData = <div style={{color:"var(--t3)",fontSize:13,textAlign:"center",padding:"20px 0"}}>Zatím žádná data</div>;
     switch(id) {
-      case "monthly_cost": return <div key={id} style={wStyle}>{title("💰 Náklady na palivo / měsíc")}{monthlyCost.length<2?noData:<ResponsiveContainer width="100%" height={180}><BarChart data={monthlyCost} margin={{top:0,right:0,left:-20,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/><XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/><YAxis tick={{fontSize:10,fill:"var(--t3)"}}/><Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v)+" Kč"}/><Bar dataKey="v" fill="var(--acc)" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer>}</div>;
-      case "avg_price": return <div key={id} style={wStyle}>{title("📈 Průměrná cena paliva v čase")}{avgPrice.length<2?noData:<ResponsiveContainer width="100%" height={180}><AreaChart data={avgPrice} margin={{top:0,right:0,left:-20,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/><XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/><YAxis tick={{fontSize:10,fill:"var(--t3)"}}/><Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v,2)+" Kč/L"}/><Area type="monotone" dataKey="v" stroke="var(--green)" fill="rgba(78,203,113,.15)" strokeWidth={2}/></AreaChart></ResponsiveContainer>}</div>;
-      case "consumption": return <div key={id} style={wStyle}>{title("⛽ Spotřeba v čase")}{consumptionData.length<2?noData:<ResponsiveContainer width="100%" height={180}><AreaChart data={consumptionData} margin={{top:0,right:0,left:-20,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/><XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/><YAxis tick={{fontSize:10,fill:"var(--t3)"}}/><Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v,2)+" L/100km"}/><Area type="monotone" dataKey="v" stroke="var(--acc)" fill="rgba(200,169,110,.15)" strokeWidth={2}/></AreaChart></ResponsiveContainer>}</div>;
+      case "monthly_cost": return <div key={id} style={wStyle}>{title("💰 Náklady na palivo / měsíc")}{monthlyCost.length<2?noData:<ResponsiveContainer width="100%" height={220}><BarChart data={monthlyCost} margin={{top:0,right:0,left:-20,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/><XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/><YAxis tick={{fontSize:10,fill:"var(--t3)"}} domain={["auto","auto"]}/><Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v)+" Kč"}/><Bar dataKey="v" fill="var(--acc)" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer>}</div>;
+      case "avg_price": return <div key={id} style={wStyle}>{title("📈 Průměrná cena paliva v čase")}{avgPrice.length<2?noData:<ResponsiveContainer width="100%" height={220}><AreaChart data={avgPrice} margin={{top:0,right:0,left:-20,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/><XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/><YAxis tick={{fontSize:10,fill:"var(--t3)"}} domain={["auto","auto"]}/><Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v,2)+" Kč/L"}/><Area type="monotone" dataKey="v" stroke="var(--green)" fill="rgba(78,203,113,.15)" strokeWidth={2}/></AreaChart></ResponsiveContainer>}</div>;
+      case "consumption": return <div key={id} style={wStyle}>{title("⛽ Spotřeba v čase")}{consumptionData.length<2?noData:<ResponsiveContainer width="100%" height={220}><AreaChart data={consumptionData} margin={{top:0,right:0,left:-20,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/><XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/><YAxis tick={{fontSize:10,fill:"var(--t3)"}} domain={["auto","auto"]}/><Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v,2)+" L/100km"}/><Area type="monotone" dataKey="v" stroke="var(--acc)" fill="rgba(200,169,110,.15)" strokeWidth={2}/></AreaChart></ResponsiveContainer>}</div>;
       case "cost_breakdown": return <div key={id} style={wStyle}>{title("🥧 Rozložení nákladů")}{breakdown.length===0?noData:<ResponsiveContainer width="100%" height={200}><PieChart><Pie data={breakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({name,percent})=>name+" "+Math.round(percent*100)+"%"} labelLine={false}>{breakdown.map((e,i)=><Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>)}</Pie><Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v)+" Kč"}/></PieChart></ResponsiveContainer>}</div>;
-      case "total_by_year": return <div key={id} style={wStyle}>{title("📅 Roční přehled celkových nákladů")}{yearlyTotal.length===0?noData:<ResponsiveContainer width="100%" height={180}><BarChart data={yearlyTotal} margin={{top:0,right:0,left:-20,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/><XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}}/><YAxis tick={{fontSize:10,fill:"var(--t3)"}}/><Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v)+" Kč"}/><Bar dataKey="v" fill="var(--blue)" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer>}</div>;
-      case "station_stats": return <div key={id} style={wStyle}>{title("📍 Oblíbené čerpací stanice")}{stationStats.length===0?noData:<ResponsiveContainer width="100%" height={180}><BarChart data={stationStats} layout="vertical" margin={{top:0,right:10,left:30,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/><XAxis type="number" tick={{fontSize:10,fill:"var(--t3)"}}/><YAxis type="category" dataKey="m" tick={{fontSize:11,fill:"var(--t2)"}} width={60}/><Tooltip contentStyle={TT_STYLE} formatter={v=>v+" x"}/><Bar dataKey="v" fill="var(--acc2)" radius={[0,4,4,0]}/></BarChart></ResponsiveContainer>}</div>;
-      case "cost_per_km": return <div key={id} style={wStyle}>{title("🚗 Náklady na palivo / 100 km")}{costPerKm.length<2?noData:<ResponsiveContainer width="100%" height={180}><AreaChart data={costPerKm} margin={{top:0,right:0,left:-20,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/><XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/><YAxis tick={{fontSize:10,fill:"var(--t3)"}}/><Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v,1)+" Kč"}/><Area type="monotone" dataKey="v" stroke="var(--red)" fill="rgba(224,92,92,.15)" strokeWidth={2}/></AreaChart></ResponsiveContainer>}</div>;
-      case "repairs_monthly": return <div key={id} style={wStyle}>{title("🔧 Náklady na opravy / měsíc")}{repairsMonthly.length===0?noData:<ResponsiveContainer width="100%" height={180}><BarChart data={repairsMonthly} margin={{top:0,right:0,left:-20,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/><XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/><YAxis tick={{fontSize:10,fill:"var(--t3)"}}/><Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v)+" Kč"}/><Bar dataKey="v" fill="var(--red)" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer>}</div>;
+      case "total_by_year": return <div key={id} style={wStyle}>{title("📅 Roční přehled celkových nákladů")}{yearlyTotal.length===0?noData:<ResponsiveContainer width="100%" height={220}><BarChart data={yearlyTotal} margin={{top:0,right:0,left:-20,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/><XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}}/><YAxis tick={{fontSize:10,fill:"var(--t3)"}} domain={["auto","auto"]}/><Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v)+" Kč"}/><Bar dataKey="v" fill="var(--blue)" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer>}</div>;
+      case "station_stats": return <div key={id} style={wStyle}>{title("📍 Oblíbené čerpací stanice")}{stationStats.length===0?noData:<ResponsiveContainer width="100%" height={220}><BarChart data={stationStats} layout="vertical" margin={{top:0,right:10,left:30,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/><XAxis type="number" tick={{fontSize:10,fill:"var(--t3)"}}/><YAxis type="category" dataKey="m" tick={{fontSize:11,fill:"var(--t2)"}} width={60}/><Tooltip contentStyle={TT_STYLE} formatter={v=>v+" x"}/><Bar dataKey="v" fill="var(--acc2)" radius={[0,4,4,0]}/></BarChart></ResponsiveContainer>}</div>;
+      case "cost_per_km": return <div key={id} style={wStyle}>{title("🚗 Náklady na palivo / 1 km")}{costPerKm.length<2?noData:<ResponsiveContainer width="100%" height={220}><AreaChart data={costPerKm} margin={{top:0,right:0,left:-20,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/><XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/><YAxis tick={{fontSize:10,fill:"var(--t3)"}} domain={["auto","auto"]}/><Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v,2)+" Kč/km"}/><Area type="monotone" dataKey="v" stroke="var(--red)" fill="rgba(224,92,92,.15)" strokeWidth={2}/></AreaChart></ResponsiveContainer>}</div>;
+      case "repairs_monthly": return <div key={id} style={wStyle}>{title("🔧 Náklady na opravy / měsíc")}{repairsMonthly.length===0?noData:<ResponsiveContainer width="100%" height={220}><BarChart data={repairsMonthly} margin={{top:0,right:0,left:-20,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/><XAxis dataKey="m" tick={{fontSize:10,fill:"var(--t3)"}} interval="preserveStartEnd"/><YAxis tick={{fontSize:10,fill:"var(--t3)"}} domain={["auto","auto"]}/><Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v)+" Kč"}/><Bar dataKey="v" fill="var(--red)" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer>}</div>;
       case "vehicles_compare": return (
         <div key={id} style={wStyle}>
           {title("🚘 Srovnání vozidel – celkové náklady")}
           {vehiclesCompare.length===0 ? noData :
           <>
-            <ResponsiveContainer width="100%" height={180}>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={vehiclesCompare} margin={{top:0,right:0,left:-20,bottom:0}}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--b1)"/>
                 <XAxis dataKey="name" tick={{fontSize:10,fill:"var(--t3)"}}/>
-                <YAxis tick={{fontSize:10,fill:"var(--t3)"}}/>
+                <YAxis tick={{fontSize:10,fill:"var(--t3)"}} domain={["auto","auto"]}/>
                 <Tooltip contentStyle={TT_STYLE} formatter={v=>fmt(v)+" Kč"}/>
                 <Legend wrapperStyle={{fontSize:11,color:"var(--t2)"}}/>
                 <Bar dataKey="fuel" name="Palivo" stackId="a" fill="var(--acc)" radius={[0,0,0,0]}/>
@@ -1646,7 +1646,46 @@ export default function App() {
               <button onClick={()=>exportCSV(addons.map(a=>({datum:a.date,vozidlo:vehicles.find(v=>v.id===a.vid)?.brand+" "+vehicles.find(v=>v.id===a.vid)?.model,km:a.km,nazev:a.name,typ:a.note,mnozstvi:a.qty,jednotka:a.unit,cena_kc:a.price,komentar:a.comment})),"doplnky.csv")} style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:10,padding:"12px 16px",color:"var(--t1)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
                 <span style={{fontSize:20}}>📦</span> Doplňky (.csv)
               </button>
-              <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",margin:"8px 0 4px"}}>JSON – kompletní záloha</div>
+              <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",margin:"16px 0 4px"}}>Import CSV</div>
+              <div style={{fontSize:12,color:"var(--t3)",marginBottom:8,lineHeight:1.5}}>Importuj historická data z CSV souboru. Sloupce: datum;misto;palivo;litry;cena_za_litr;celkem_kc;km</div>
+              <label style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:10,padding:"12px 16px",color:"var(--t1)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
+                <span style={{fontSize:20}}>📥</span> Importovat tankování (.csv)
+                <input type="file" accept=".csv" style={{display:"none"}} onChange={async e=>{
+                  const file = e.target.files[0];
+                  if(!file||!activeVid) return;
+                  const text = await file.text();
+                  const lines = text.split(/\r?\n/).filter(Boolean);
+                  const header = lines[0].split(";").map(h=>h.trim().toLowerCase().replace(/[^a-z_]/g,""));
+                  let imported = 0, skipped = 0;
+                  for(let i=1;i<lines.length;i++){
+                    const cols = lines[i].split(";");
+                    const row = {};
+                    header.forEach((h,j)=>row[h]=cols[j]?.trim().replace(/"/g,"")||"");
+                    const date = row["datum"]||row["date"]||"";
+                    const liters = parseFloat((row["litry"]||row["liters"]||"0").replace(",","."));
+                    const ppl = parseFloat((row["cena_za_litr"]||row["price_per_liter"]||"0").replace(",","."));
+                    const total = parseFloat((row["celkem_kc"]||row["total"]||"0").replace(",","."));
+                    const km = parseInt(row["km"]||"0");
+                    if(!date||!liters){skipped++;continue;}
+                    const rec = {
+                      vid:activeVid,
+                      date,
+                      location:row["misto"]||row["location"]||"",
+                      fuelType:row["palivo"]||row["fuel_type"]||row["fueltype"]||"Natural 95",
+                      liters,
+                      pricePerLiter:ppl||Math.round(total/liters*100)/100||0,
+                      total:total||Math.round(liters*ppl*100)/100||0,
+                      km
+                    };
+                    await saveFuel(rec, null);
+                    imported++;
+                  }
+                  alert("Importováno: "+imported+" záznamů"+(skipped?" (přeskočeno: "+skipped+")":""));
+                  e.target.value="";
+                }}/>
+              </label>
+              <div style={{fontSize:10,color:"var(--t3)",marginTop:4}}>Tip: Exportuj nejdřív vzorové CSV pro správný formát sloupců.</div>
+              <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",margin:"16px 0 4px"}}>JSON – kompletní záloha</div>
               <button onClick={()=>exportJSON({vehicles,fueling,repairs,addons,exportDate:new Date().toISOString()},"autodenik-zaloha.json")} style={{background:"var(--s2)",border:"1px solid var(--acc)",borderRadius:10,padding:"12px 16px",color:"var(--acc)",fontSize:14,fontWeight:500,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
                 <span style={{fontSize:20}}>💾</span> Kompletní záloha (.json)
               </button>
