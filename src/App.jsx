@@ -1640,7 +1640,7 @@ export default function App() {
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24,backdropFilter:"blur(10px)"}} onClick={()=>setShowExport(false)}>
           <div style={{background:"var(--s1)",border:"1px solid var(--b2)",borderRadius:20,maxWidth:360,width:"100%",maxHeight:"85dvh",display:"flex",flexDirection:"column"}} onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 20px 16px",borderBottom:"1px solid var(--b1)",flexShrink:0}}>
-              <h2 style={{fontSize:18,fontWeight:500}}>Export dat</h2>
+              <h2 style={{fontSize:18,fontWeight:500}}>Data a záloha</h2>
               <button onClick={()=>setShowExport(false)} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,color:"var(--t3)",width:36,height:36,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
             </div>
             <div style={{overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"16px 20px 24px",flex:1}}>
