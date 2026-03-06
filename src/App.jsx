@@ -1412,6 +1412,7 @@ export default function App() {
     {id:"addons",icon:"📦",label:"Doplňky"},
     ...(isPremium ? [{id:"stats",icon:"📊",label:"Statistiky"}] : [])
   ];
+  const tabFontSize = TABS.length >= 4 ? 11 : 13;
 
   // ── AUTH SCREEN ───────────────────────────────────────────────────────────
   if(authLoading) return (
@@ -1620,7 +1621,7 @@ export default function App() {
               {/* Tabs */}
               <div style={{display:"flex",gap:0,marginBottom:20,borderBottom:"1px solid var(--b1)"}}>
                 {TABS.map(t=>(
-                  <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,background:"none",border:"none",borderBottom:tab===t.id?"2px solid var(--acc)":"2px solid transparent",padding:"12px 4px",marginBottom:"-1px",color:tab===t.id?"var(--acc)":"var(--t3)",fontWeight:tab===t.id?600:400,fontSize:13,letterSpacing:".02em",transition:"all .2s",touchAction:"manipulation"}}>{t.icon} {t.label}</button>
+                  <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,background:"none",border:"none",borderBottom:tab===t.id?"2px solid var(--acc)":"2px solid transparent",padding:"12px 2px",marginBottom:"-1px",color:tab===t.id?"var(--acc)":"var(--t3)",fontWeight:tab===t.id?600:400,fontSize:tabFontSize,letterSpacing:".01em",transition:"all .2s",touchAction:"manipulation",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.icon} {t.label}</button>
                 ))}
               </div>
 
