@@ -1679,6 +1679,14 @@ export default function App() {
                     const total = parseFloat((row["celkem_kc"]||row["total"]||"0").replace(",","."));
                     const km = parseInt(row["km"]||"0");
                     if(!date||!liters){skipped++;continue;}
+                    // Kontrola duplicit - stejné datum, km a litry
+                    const isDuplicate = fueling.some(f=>
+                      f.vid===activeVid &&
+                      f.date===date &&
+                      Math.abs(f.liters-liters)<0.01 &&
+                      Math.abs(f.km-km)<1
+                    );
+                    if(isDuplicate){skipped++;continue;}
                     const rec = {
                       vid:activeVid,
                       date,
@@ -1697,6 +1705,84 @@ export default function App() {
                 }}/>
               </label>
               <div style={{fontSize:10,color:"var(--t3)",marginTop:4}}>Tip: Exportuj nejdřív vzorové CSV pro správný formát sloupců.</div>
+              <label style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:10,padding:"12px 16px",color:"var(--t1)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
+                <span style={{fontSize:20}}>📥</span> Importovat opravy (.csv)
+                <input type="file" accept=".csv" style={{display:"none"}} onChange={async e=>{
+                  const file = e.target.files[0];
+                  if(!file||!activeVid) return;
+                  const text = await file.text();
+                  const lines = text.split(/\r?\n/).filter(Boolean);
+                  const header = lines[0].split(";").map(h=>h.trim().toLowerCase().replace(/[^a-z_]/g,""));
+                  let imported=0, skipped=0;
+                  for(let i=1;i<lines.length;i++){
+                    const cols = lines[i].split(";");
+                    const row = {};
+                    header.forEach((h,j)=>row[h]=cols[j]?.trim().replace(/"/g,"")||"");
+                    const date = row["datum"]||row["date"]||"";
+                    const km = parseInt(row["km"]||"0");
+                    const matPrice = parseFloat((row["material_kc"]||row["mat_price"]||"0").replace(",","."));
+                    const laborPrice = parseFloat((row["prace_kc"]||row["labor_price"]||"0").replace(",","."));
+                    if(!date){skipped++;continue;}
+                    const isDuplicate = repairs.some(r=>
+                      r.vid===activeVid && r.date===date && Math.abs(r.km-km)<1 &&
+                      Math.abs((r.matPrice||0)-matPrice)<0.01 && Math.abs((r.laborPrice||0)-laborPrice)<0.01
+                    );
+                    if(isDuplicate){skipped++;continue;}
+                    const rec = {
+                      vid:activeVid, date, km,
+                      material:row["material"]||"",
+                      note:row["poznamka"]||row["note"]||"",
+                      qty:parseFloat((row["mnozstvi"]||row["qty"]||"1").replace(",","."))||1,
+                      unit:row["jednotka"]||row["unit"]||"ks",
+                      matPrice, laborPrice,
+                      who:row["kdo"]||row["who"]||"",
+                      comment:row["komentar"]||row["comment"]||""
+                    };
+                    await saveRepair(rec, null);
+                    imported++;
+                  }
+                  alert("Importováno: "+imported+" záznamů"+(skipped?" (přeskočeno: "+skipped+")":""));
+                  e.target.value="";
+                }}/>
+              </label>
+              <label style={{background:"var(--s2)",border:"1px solid var(--b1)",borderRadius:10,padding:"12px 16px",color:"var(--t1)",fontSize:14,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
+                <span style={{fontSize:20}}>📥</span> Importovat doplňky (.csv)
+                <input type="file" accept=".csv" style={{display:"none"}} onChange={async e=>{
+                  const file = e.target.files[0];
+                  if(!file||!activeVid) return;
+                  const text = await file.text();
+                  const lines = text.split(/\r?\n/).filter(Boolean);
+                  const header = lines[0].split(";").map(h=>h.trim().toLowerCase().replace(/[^a-z_]/g,""));
+                  let imported=0, skipped=0;
+                  for(let i=1;i<lines.length;i++){
+                    const cols = lines[i].split(";");
+                    const row = {};
+                    header.forEach((h,j)=>row[h]=cols[j]?.trim().replace(/"/g,"")||"");
+                    const date = row["datum"]||row["date"]||"";
+                    const km = parseInt(row["km"]||"0");
+                    const price = parseFloat((row["cena_kc"]||row["price"]||"0").replace(",","."));
+                    if(!date){skipped++;continue;}
+                    const isDuplicate = addons.some(a=>
+                      a.vid===activeVid && a.date===date && Math.abs(a.km-km)<1 &&
+                      Math.abs((a.price||0)-price)<0.01
+                    );
+                    if(isDuplicate){skipped++;continue;}
+                    const rec = {
+                      vid:activeVid, date, km,
+                      name:row["nazev"]||row["name"]||"",
+                      note:row["typ"]||row["note"]||"",
+                      qty:parseFloat((row["mnozstvi"]||row["qty"]||"1").replace(",","."))||1,
+                      unit:row["jednotka"]||row["unit"]||"ks",
+                      price,
+                      comment:row["komentar"]||row["comment"]||""
+                    };
+                    await saveAddon(rec, null);
+                    imported++;
+                  }
+                  alert("Importováno: "+imported+" záznamů"+(skipped?" (přeskočeno: "+skipped+")":""));
+                  e.target.value="";
+                }}/>
+              </label>
               <div style={{fontSize:10,fontWeight:500,letterSpacing:".12em",color:"var(--t3)",textTransform:"uppercase",margin:"16px 0 4px"}}>JSON – kompletní záloha</div>
               <button onClick={()=>exportJSON({vehicles,fueling,repairs,addons,exportDate:new Date().toISOString()},"autodenik-zaloha.json")} style={{background:"var(--s2)",border:"1px solid var(--acc)",borderRadius:10,padding:"12px 16px",color:"var(--acc)",fontSize:14,fontWeight:500,textAlign:"left",touchAction:"manipulation",display:"flex",alignItems:"center",gap:10}}>
                 <span style={{fontSize:20}}>💾</span> Kompletní záloha (.json)
