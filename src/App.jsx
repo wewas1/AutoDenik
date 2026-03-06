@@ -18,11 +18,16 @@ const exportCSV = (rows, filename) => {
   if(!rows.length) return;
   const keys = Object.keys(rows[0]);
   const nl = String.fromCharCode(10);
-  const csv = [keys.join(";"), ...rows.map(r => keys.map(k => {
-    const v = r[k] ?? "";
-    return typeof v === "string" && v.includes(";") ? ('"' + v + '"') : v;
-  }).join(";"))].join(nl);
-  const blob = new Blob(["﻿"+csv], {type:"text/csv;charset=utf-8"});
+  const fmtCell = (v) => {
+    if(v == null) return "";
+    if(typeof v === "number") return String(v).replace(".", ",");
+    const s = String(v);
+    if(/^\d+\.\d+$/.test(s)) return s.replace(".", ",");
+    if(s.includes(";")) return '"' + s + '"';
+    return s;
+  };
+  const csv = [keys.join(";"), ...rows.map(r => keys.map(k => fmtCell(r[k])).join(";"))].join(nl);
+  const blob = new Blob(["\ufeff"+csv], {type:"text/csv;charset=utf-8"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = filename;
