@@ -1681,7 +1681,9 @@ export default function App() {
                     const cols = lines[i].split(";");
                     const row = {};
                     header.forEach((h,j)=>row[h]=cols[j]?.trim().replace(/"/g,"")||"");
-                    const date = row["datum"]||row["date"]||"";
+                    const rawDate = row["datum"]||row["date"]||"";
+                    // Převod DD.MM.YYYY nebo D.M.YYYY na YYYY-MM-DD
+                    const date = rawDate.includes(".") ? (()=>{ const [d,m,y]=rawDate.split("."); return y&&m&&d ? y.trim()+"-"+m.trim().padStart(2,"0")+"-"+d.trim().padStart(2,"0") : rawDate; })() : rawDate;
                     const liters = parseFloat((row["litry"]||row["liters"]||"0").replace(",","."));
                     const ppl = parseFloat((row["cena_za_litr"]||row["price_per_liter"]||"0").replace(",","."));
                     const total = parseFloat((row["celkem_kc"]||row["total"]||"0").replace(",","."));
@@ -1726,7 +1728,8 @@ export default function App() {
                     const cols = lines[i].split(";");
                     const row = {};
                     header.forEach((h,j)=>row[h]=cols[j]?.trim().replace(/"/g,"")||"");
-                    const date = row["datum"]||row["date"]||"";
+                    const rawDate = row["datum"]||row["date"]||"";
+                    const date = rawDate.includes(".") ? (()=>{ const [d,m,y]=rawDate.split("."); return y&&m&&d ? y.trim()+"-"+m.trim().padStart(2,"0")+"-"+d.trim().padStart(2,"0") : rawDate; })() : rawDate;
                     const km = parseInt(row["km"]||"0");
                     const matPrice = parseFloat((row["material_kc"]||row["mat_price"]||"0").replace(",","."));
                     const laborPrice = parseFloat((row["prace_kc"]||row["labor_price"]||"0").replace(",","."));
@@ -1766,7 +1769,8 @@ export default function App() {
                     const cols = lines[i].split(";");
                     const row = {};
                     header.forEach((h,j)=>row[h]=cols[j]?.trim().replace(/"/g,"")||"");
-                    const date = row["datum"]||row["date"]||"";
+                    const rawDate = row["datum"]||row["date"]||"";
+                    const date = rawDate.includes(".") ? (()=>{ const [d,m,y]=rawDate.split("."); return y&&m&&d ? y.trim()+"-"+m.trim().padStart(2,"0")+"-"+d.trim().padStart(2,"0") : rawDate; })() : rawDate;
                     const km = parseInt(row["km"]||"0");
                     const price = parseFloat((row["cena_kc"]||row["price"]||"0").replace(",","."));
                     if(!date){skipped++;continue;}
