@@ -975,7 +975,11 @@ const VForm = ({existing,onSave,onClose}) => {
         <FR label="Značka" half><input value={form.brand} onChange={e=>s("brand",e.target.value)} placeholder="Škoda, Volkswagen, Toyota..."/></FR>
         <FR label="Model" half><input value={form.model} onChange={e=>s("model",e.target.value)} placeholder="Octavia, Passat, Yaris..."/></FR>
         <FR label="Rok výroby" half><input type="number" inputMode="numeric" value={form.year} onChange={e=>s("year",e.target.value)}/></FR>
-        <FR label="SPZ" half><input value={form.spz} onChange={e=>s("spz",e.target.value)} placeholder="1AB 2345"/></FR>
+        <FR label="SPZ" half><input value={form.spz} onChange={e=>{
+  const raw = e.target.value.replace(/\s+/g,"").toUpperCase();
+  const fmt = raw.length>3 ? raw.slice(0,3)+" "+raw.slice(3) : raw;
+  s("spz", fmt);
+}} placeholder="1AB 2345" maxLength={8}/></FR>
         <FR label="VIN"><input className="vin-input" value={form.vin} onChange={e=>s("vin",e.target.value.toUpperCase())} placeholder="TMBZZZ1Z9K1234567"/></FR>
         <FR label="Palivo"><select value={form.fuel} onChange={e=>s("fuel",e.target.value)}>{["Benzín","Diesel","LPG","CNG","Hybrid","Elektro"].map(o=><option key={o}>{o}</option>)}</select></FR>
         <FR label="Platnost STK" half><input type="date" value={form.stk||""} onChange={e=>s("stk",e.target.value)}/></FR>
