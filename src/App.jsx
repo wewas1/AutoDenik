@@ -330,9 +330,9 @@ const StatsMod = ({ fueling, repairs, addons, vehicles, activeVid, user }) => {
 
       {/* Filtr */}
       <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
-        <input type="date" value={fFrom} onChange={e=>setFFrom(e.target.value)} style={{flex:1,fontSize:13,padding:"8px 10px"}}/>
+        <input type="date" value={fFrom} onChange={e=>setFrom(e.target.value)} style={{flex:1,fontSize:13,padding:"8px 10px"}}/>
         <span style={{color:"var(--t3)",fontSize:12}}>–</span>
-        <input type="date" value={fTo} onChange={e=>setFTo(e.target.value)} style={{flex:1,fontSize:13,padding:"8px 10px"}}/>
+        <input type="date" value={fTo} onChange={e=>setTo(e.target.value)} style={{flex:1,fontSize:13,padding:"8px 10px"}}/>
         {(fFrom||fTo)&&<button onClick={()=>{setFrom("");setTo("");}} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,color:"var(--t3)",padding:"8px 10px",fontSize:12}}>✕</button>}
       </div>
 
