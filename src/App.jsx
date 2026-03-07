@@ -208,8 +208,10 @@ const StatsMod = ({ fueling, repairs, addons, vehicles, activeVid, user }) => {
     catch(e) { return ["monthly_cost","cost_breakdown","station_stats"]; }
   });
   const [showPicker, setShowPicker] = useState(false);
-  const [fFrom, setFFrom] = useState("");
-  const [fTo, setFTo] = useState("");
+  const [fFrom, setFFrom] = useState(()=>localStorage.getItem("ad_stats_from")||"");
+  const [fTo, setFTo] = useState(()=>localStorage.getItem("ad_stats_to")||"");
+  const setFrom = v => { setFFrom(v); localStorage.setItem("ad_stats_from", v); };
+  const setTo   = v => { setFTo(v);   localStorage.setItem("ad_stats_to",   v); };
 
   const saveWidgets = (w) => { setActiveWidgets(w); localStorage.setItem(LS_KEY, JSON.stringify(w)); };
   const toggle = (id) => saveWidgets(activeWidgets.includes(id) ? activeWidgets.filter(x=>x!==id) : [...activeWidgets, id]);
@@ -331,7 +333,7 @@ const StatsMod = ({ fueling, repairs, addons, vehicles, activeVid, user }) => {
         <input type="date" value={fFrom} onChange={e=>setFFrom(e.target.value)} style={{flex:1,fontSize:13,padding:"8px 10px"}}/>
         <span style={{color:"var(--t3)",fontSize:12}}>–</span>
         <input type="date" value={fTo} onChange={e=>setFTo(e.target.value)} style={{flex:1,fontSize:13,padding:"8px 10px"}}/>
-        {(fFrom||fTo)&&<button onClick={()=>{setFFrom("");setFTo("");}} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,color:"var(--t3)",padding:"8px 10px",fontSize:12}}>✕</button>}
+        {(fFrom||fTo)&&<button onClick={()=>{setFrom("");setTo("");}} style={{background:"none",border:"1px solid var(--b1)",borderRadius:8,color:"var(--t3)",padding:"8px 10px",fontSize:12}}>✕</button>}
       </div>
 
       {/* Widget picker */}
@@ -372,8 +374,10 @@ const FuelMod = ({vid,fueling,saveFuel,delFuel,sharedReceipt,onSharedReceiptDone
   const showF = externalShowF !== undefined ? externalShowF : _showF;
   const setShowF = externalShowF !== undefined ? setExternalShowF : _setShowF;
   const [editId,setEditId] = useState(null);
-  const [fFrom,setFFrom] = useState("");
-  const [fTo,setFTo] = useState("");
+  const [fFrom,setFFrom] = useState(()=>localStorage.getItem("ad_fuel_from")||"");
+  const [fTo,setFTo] = useState(()=>localStorage.getItem("ad_fuel_to")||"");
+  const setFrom = v => { setFFrom(v); localStorage.setItem("ad_fuel_from", v); };
+  const setTo   = v => { setFTo(v);   localStorage.setItem("ad_fuel_to",   v); };
   const [showLocSug,setShowLocSug] = useState(false);
   const [scanLoading,setScanLoading] = useState(false);
   const [scanError,setScanError] = useState("");
@@ -565,7 +569,7 @@ const getLastFuelForForm = () => {
 
       {/* Filter + Add */}
       <div style={{background:"var(--s2)",border:"1.5px solid var(--b1)",borderRadius:12,padding:"12px 14px",margin:"14px 0",display:"flex",flexDirection:"column",gap:12}}>
-        <DF from={fFrom} to={fTo} onFrom={setFFrom} onTo={setFTo}/>
+        <DF from={fFrom} to={fTo} onFrom={setFrom} onTo={setTo}/>
         <Btn onClick={openNew} full>+ Přidat tankování</Btn>
       </div>
 
@@ -766,8 +770,11 @@ const getLastFuelForForm = () => {
 const RepMod = ({vid,repairs,saveRepair,delRepair}) => {
   const [showF,setShowF] = useState(false);
   const [editId,setEditId] = useState(null);
-  const [fFrom,setFFrom] = useState("");
-  const [fTo,setFTo] = useState("");
+  const [fFrom,setFFrom] = useState(()=>localStorage.getItem("ad_rep_from")||"");
+  const [fTo,setFTo] = useState(()=>localStorage.getItem("ad_rep_to")||"");
+  const setFrom = v => { setFFrom(v); localStorage.setItem("ad_rep_from", v); };
+  const setTo   = v => { setFTo(v);   localStorage.setItem("ad_rep_to",   v); };
+  const [search,setSearch] = useState("");
   const [showLocSug,setShowLocSug] = useState(false);
   const ef = {date:new Date().toISOString().slice(0,10),km:"",material:"",note:"",qty:"",unit:"ks",matPrice:"",laborPrice:"",who:"",comment:""};
   const [form,setForm] = useState(ef);
@@ -777,6 +784,7 @@ const RepMod = ({vid,repairs,saveRepair,delRepair}) => {
   const filtered = vd.filter(r=>{
     if(fFrom&&r.date<fFrom)return false;
     if(fTo&&r.date>fTo)return false;
+    if(search){const q=search.toLowerCase();if(![r.material,r.note,r.who,r.comment].some(v=>v&&v.toLowerCase().includes(q)))return false;}
     return true;
   }).sort((a,b)=>new Date(b.date)-new Date(a.date)||b.km-a.km);
 
@@ -800,7 +808,8 @@ const RepMod = ({vid,repairs,saveRepair,delRepair}) => {
       </div>
       <StatBox label="Celkem za opravy" val={fmt(tMat+tLab)} unit="Kč" c="var(--acc)"/>
       <div style={{background:"var(--s2)",border:"1.5px solid var(--b1)",borderRadius:12,padding:"12px 14px",margin:"14px 0",display:"flex",flexDirection:"column",gap:12}}>
-        <DF from={fFrom} to={fTo} onFrom={setFFrom} onTo={setFTo}/>
+        <DF from={fFrom} to={fTo} onFrom={setFrom} onTo={setTo}/>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Hledat v opravách..." style={{background:"var(--s1)",border:"1px solid var(--b1)",borderRadius:8,padding:"10px 12px",color:"var(--t1)",fontSize:13,width:"100%",boxSizing:"border-box"}}/>
         <Btn onClick={openNew} full>+ Přidat opravu</Btn>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -861,12 +870,23 @@ const RepMod = ({vid,repairs,saveRepair,delRepair}) => {
 const AddMod = ({vid,addons,saveAddon,delAddon}) => {
   const [showF,setShowF] = useState(false);
   const [editId,setEditId] = useState(null);
+  const [fFrom,setFFrom] = useState(()=>localStorage.getItem("ad_add_from")||"");
+  const [fTo,setFTo] = useState(()=>localStorage.getItem("ad_add_to")||"");
+  const setFrom = v => { setFFrom(v); localStorage.setItem("ad_add_from", v); };
+  const setTo   = v => { setFTo(v);   localStorage.setItem("ad_add_to",   v); };
+  const [search,setSearch] = useState("");
   const ef = {date:new Date().toISOString().slice(0,10),km:"",name:"",note:"",qty:"1",unit:"ks",price:"",comment:""};
   const [form,setForm] = useState(ef);
   const s = (k,v)=>setForm(p=>({...p,[k]:v}));
 
-  const vd = addons.filter(a=>a.vid===vid).sort((a,b)=>new Date(b.date)-new Date(a.date));
-  const total = vd.reduce((s,a)=>s+parseFloat(a.price||0),0);
+  const vd = addons.filter(a=>a.vid===vid).sort((a,b)=>new Date(b.date)-new Date(a.date)||b.km-a.km);
+  const filtered = vd.filter(a=>{
+    if(fFrom&&a.date<fFrom)return false;
+    if(fTo&&a.date>fTo)return false;
+    if(search){const q=search.toLowerCase();if(![a.name,a.note,a.comment].some(v=>v&&v.toLowerCase().includes(q)))return false;}
+    return true;
+  });
+  const total = filtered.reduce((s,a)=>s+parseFloat(a.price||0),0);
 
   const openNew=()=>{setForm(ef);setEditId(null);setShowF(true);};
   const openEdit=a=>{setForm({...a,price:String(a.price),km:String(a.km)});setEditId(a.id);setShowF(true);};
@@ -881,11 +901,15 @@ const AddMod = ({vid,addons,saveAddon,delAddon}) => {
     <div className="au">
       <div style={{display:"flex",gap:10,marginBottom:14}}>
         <StatBox label="Celkem doplňky" val={fmt(total)} unit="Kč" c="var(--green)"/>
-        <StatBox label="Počet položek" val={vd.length} unit="zázn." c="var(--blue)"/>
+        <StatBox label="Počet položek" val={filtered.length} unit="zázn." c="var(--blue)"/>
       </div>
-      <Btn onClick={openNew} full>+ Přidat doplněk</Btn>
-      <div style={{display:"flex",flexDirection:"column",gap:10,marginTop:14}}>
-        {vd.map(a=>(
+      <div style={{background:"var(--s2)",border:"1.5px solid var(--b1)",borderRadius:12,padding:"12px 14px",margin:"0 0 14px",display:"flex",flexDirection:"column",gap:12}}>
+        <DF from={fFrom} to={fTo} onFrom={setFrom} onTo={setTo}/>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Hledat v doplňcích..." style={{background:"var(--s1)",border:"1px solid var(--b1)",borderRadius:8,padding:"10px 12px",color:"var(--t1)",fontSize:13,width:"100%",boxSizing:"border-box"}}/>
+        <Btn onClick={openNew} full>+ Přidat doplněk</Btn>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {filtered.map(a=>(
           <div key={a.id} style={{background:"var(--s2)",border:"1.5px solid var(--b1)",borderRadius:12,padding:"14px 16px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
               <div style={{flex:1,minWidth:0,marginRight:12}}>
@@ -907,7 +931,7 @@ const AddMod = ({vid,addons,saveAddon,delAddon}) => {
             </div>
           </div>
         ))}
-        {vd.length===0&&<div style={{padding:40,textAlign:"center",color:"var(--t3)",background:"var(--s2)",border:"1.5px solid var(--b1)",borderRadius:12}}><div style={{fontSize:36,marginBottom:8}}>📦</div><div>Přidej první doplněk!</div></div>}
+        {filtered.length===0&&<div style={{padding:40,textAlign:"center",color:"var(--t3)",background:"var(--s2)",border:"1.5px solid var(--b1)",borderRadius:12}}><div style={{fontSize:36,marginBottom:8}}>📦</div><div>{vd.length===0?"Přidej první doplněk!":"Žádné výsledky"}</div></div>}
       </div>
       {showF&&(
         <Modal title={editId?"Upravit doplněk":"Nový doplněk"} onClose={()=>setShowF(false)}>
